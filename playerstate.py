@@ -15,6 +15,14 @@ class Player(object):
         assert gamestate.active_player is self
         return self.strategy.get_moves(gamestate)
 
+    # Allows dict-style access to "values" and "zones" in PlayerState
+    def __getitem__(self, item):
+        return self.state[item]
+
+    # Allows dict-style access to "values" and "zones" in PlayerState
+    def __setitem__(self, item, *args, **kwargs):
+        return self.state.__setitem__(item, *args, **kwargs)
+
 
 class PlayerState(object):
     def __init__(self, first_player=False):
@@ -30,6 +38,7 @@ class PlayerState(object):
             IN_PLAY: [],
             DISCARD: []
         }
+        # Not necessary, maybe faster, maybe negligibly?
         self._deck = self.zones[DECK]
         self._hand = self.zones[HAND]
         self._play = self.zones[IN_PLAY]
@@ -37,6 +46,22 @@ class PlayerState(object):
 
         shuffle(self.zones[Zones.DECK])
         self.draw(3 if first_player else 5)
+
+    # Allow dict-style access to values and zones
+    def __getitem__(self, item):
+        try:
+            return self.values[item]
+        except KeyError:
+            return self.zones[item]
+
+    # Allow dict-style access to values and zones
+    def __setitem__(self, item, *args, **kwargs):
+        if item in self.values:
+            self.values.__setitem__(item, *args, **kwargs)
+        elif item in self.zones:
+            self.zones.__setitem__(item, *args, **kwargs)
+        else:
+            raise KeyError
 
     def shuffle_deck(self):
         assert len(self._deck) == 0

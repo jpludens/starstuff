@@ -19,12 +19,12 @@ class ExplorerStrategy(object):
 
         # If we have cards, play them
         if playerstate.zones[HAND]:
-            return [Move(PLAY, card) for card in playerstate.zones[HAND]]
+            return [Move(PLAY, card) for card in playerstate[HAND]]
 
         # If we don't have cards, buy some explorers?
         owned_explorers = playerstate.count_explorers()
         if self.maximum_explorers and owned_explorers < self.maximum_explorers:
-            number_to_buy = playerstate.values[TRADE] // Explorer[COST]
+            number_to_buy = playerstate[TRADE] // Explorer[COST]
             if number_to_buy:
                 return [Move(BUY, Explorer)] * number_to_buy
 
@@ -34,12 +34,12 @@ class ExplorerStrategy(object):
             ratio = gamestate.inactive_player.state.values[AUTHORITY] / owned_explorers
             if owned_explorers >= self.minimum_explorers\
                     or ratio < self.authority_to_explorer_ratio_to_ignore_minimum:
-                number_to_scrap = playerstate.zones[IN_PLAY].count(Explorer)
+                number_to_scrap = playerstate[IN_PLAY].count(Explorer)
                 if number_to_scrap:
                     return [Move(SCRAP, Explorer)] * number_to_scrap
 
         # If we're not scrapping, attack?
-        if playerstate.values[DAMAGE]:
+        if playerstate[DAMAGE]:
             return [Move(ATTACK)]
 
         # Guess we're done then

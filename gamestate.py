@@ -19,22 +19,18 @@ class GameState(object):
     def do_move(self, move):
         logging.warning("Move: {} {}".format(move.action, move.target))
         if move.action == PLAY:
-            # (TODO: Make players / states keyable?)
-            # (TODO: Make 'Zones' directly accessible/importable?
-            # self.active_player.state.zones[Zones.HAND] => self.active_player[HAND]
             move_list_item(move.target,
-                           self.active_player.state.zones[HAND],
-                           self.active_player.state.zones[IN_PLAY])
+                           self.active_player[HAND],
+                           self.active_player[IN_PLAY])
             self.apply_abilities(move)
         elif move.action == SCRAP:
-            move_list_item(move.target, self.active_player.state.zones[IN_PLAY], [])
+            move_list_item(move.target, self.active_player[IN_PLAY], [])
             self.apply_abilities(move)
         elif move.action == BUY:
             # No trade deck yet, only Explorers, so append instead of move
             assert move.target == Explorer
-            # TODO: move(card, TRADE_ROW, DISC)
-            self.active_player.state.zones[DISCARD].append(move.target)
-            self.active_player.state.values[TRADE] -= move.target[COST]
+            self.active_player[DISCARD].append(move.target)
+            self.active_player[TRADE] -= move.target[COST]
         elif move.action == ATTACK:
             logging.warning("Attacking for {} damage!".format(self.active_player.state.values[DAMAGE]))
             self.inactive_player.state.values[AUTHORITY] -= self.active_player.state.values[DAMAGE]
