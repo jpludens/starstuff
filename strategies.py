@@ -1,4 +1,6 @@
 from cards import Explorer
+from enums import *
+from move import Move
 
 
 class ExplorerStrategy(object):
@@ -12,37 +14,33 @@ class ExplorerStrategy(object):
         # This should squeak ahead at the margins
         self.authority_to_explorer_ratio_to_ignore_minimum = ratio
 
-    def buy_explorers(self, state):
-        if self.maximum_explorers and state.metrics[Explorer] >= self.maximum_explorers:
-            return
+    def get_moves(self, gamestate):
+        playerstate = gamestate.active_player.state
 
-        explorers_to_buy = sum([card.trade for card in state.hand]) // Explorer.cost
-        state.discard.extend([Explorer] * explorers_to_buy)
-        state.metrics[Explorer] += explorers_to_buy
+        # If we have cards, play them
+        if playerstate.zones[HAND]:
+            return [Move(PLAY, card) for card in playerstate.zones[HAND]]
 
-    def scrap_explorers(self, state):
-        # (avoid a divide by 0)
-        if not state.metrics[Explorer]:
-            return
+        # If we don't have cards, buy some explorers?
+        owned_explorers = playerstate.count_explorers()
+        if self.maximum_explorers and owned_explorers < self.maximum_explorers:
+            number_to_buy = playerstate.values[TRADE] // Explorer[COST]
+            if number_to_buy:
+                return [Move(BUY, Explorer)] * number_to_buy
 
-        explorers_to_scrap = 0
-        if state.opponent_state.authority / state.metrics[Explorer] < self.authority_to_explorer_ratio_to_ignore_minimum:
-            explorers_to_scrap = state.hand.count(Explorer)
+        # If we aren't buying, scrap?
+        owned_explorers = playerstate.count_explorers()
+        if owned_explorers:
+            ratio = gamestate.inactive_player.state.values[AUTHORITY] / owned_explorers
+            if owned_explorers >= self.minimum_explorers\
+                    or ratio < self.authority_to_explorer_ratio_to_ignore_minimum:
+                number_to_scrap = playerstate.zones[IN_PLAY].count(Explorer)
+                if number_to_scrap:
+                    return [Move(SCRAP, Explorer)] * number_to_scrap
 
-        if state.metrics[Explorer] >= self.minimum_explorers:
-            explorers_to_scrap = state.hand.count(Explorer)
+        # If we're not scrapping, attack?
+        if playerstate.values[DAMAGE]:
+            return [Move(ATTACK)]
 
-        if explorers_to_scrap:
-            explorer_damage = 0
-            while explorers_to_scrap:
-                try:
-                    state.hand.remove(Explorer)
-                except ValueError:
-                    break
-                else:
-                    explorer_damage += 2
-                    state.metrics[Explorer] -= 1
-
-            # Not sure how I feel about directly modifying opponent state here but fine for now
-            if explorer_damage:
-                state.opponent_state.authority -= explorer_damage
+        # Guess we're done then
+        return [Move(END_TURN)]

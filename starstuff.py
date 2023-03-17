@@ -1,11 +1,20 @@
-# Goal: Step through a "game" where only Explorers are purchased.
-# Build a malleable "strategy" around how many Explorers to buy and when to scrap them for damage.
-# Try to determine the best Explorer-only strategy.
+# Goal: Build in actually playing cards and counting trade/combat instead of the current hacks
+# Cleanup!  Make stuff less verbose
+
+# Goal: Build a logging system that can be toggled on/off
+#       log card movements, value changes, and actions initiated
+# Goal: Add all ships (use stubs for all abilities besides auth, trade, combat)
+# Goal: Add all ships (use stubs as above)
+# Goal: Implement card draw abilities
+# Goal: Implement faction abilities
+#       need to track availabilityby individual card
+# Goal: Implement remaining abilities
 
 from collections import Counter
 from pprint import PrettyPrinter
+
+from enums import *
 from gamestate import GameState
-from cards import Viper, Explorer
 from strategies import ExplorerStrategy
 
 
@@ -19,27 +28,16 @@ def play_game():
                                     ratio=2)
 
     gamestate = GameState(alice_strategy, bob_strategy)
-    gamestate.p1_state.metrics[Explorer] = 0
-    gamestate.p2_state.metrics[Explorer] = 0
-    while gamestate.p1_state.authority > 0 and gamestate.p2_state.authority > 0:
-        # Deal Viper Damage
-        viper_damage = gamestate.active_player.hand.count(Viper)
-        gamestate.inactive_player.authority -= viper_damage
+    while True:
+        moves = gamestate.active_player.get_moves(gamestate)
+        for move in moves:
+            gamestate.do_move(move)
 
-        # Buy Explorers
-        gamestate.active_player.strategy.buy_explorers(gamestate.active_player)
-
-        # Scrap Explorers and Deal Explorer Damage
-        gamestate.active_player.strategy.scrap_explorers(gamestate.active_player)
-
-        # Check for Victory
-        if gamestate.inactive_player.authority <= 0:
-            result = (1, gamestate.turn_number) if gamestate.active_player is gamestate.p1_state \
-                else (2, gamestate.turn_number)
-            return result
-
-        # End turn
-        gamestate.next_turn()
+            # Check for Victory
+            if gamestate.inactive_player.state.values[AUTHORITY] <= 0:
+                result = (1, gamestate.turn_number) if gamestate.active_player.name == "Alice" \
+                    else (2, gamestate.turn_number)
+                return result
 
 
 def battle(n=1):

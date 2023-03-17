@@ -1,18 +1,29 @@
-class Card(object):
-    cost = 0
-    trade = 0
-    damage = 0
+from enums import *
 
 
-class Scout(Card):
-    trade = 1
+Scout = {
+    NAME: "Scout",
+    COST: 0,
+    PLAY: {
+        TRADE: 1
+    }
+}
 
+Viper = {
+    NAME: "Viper",
+    COST: 0,
+    PLAY: {
+        DAMAGE: 1
+    }
+}
 
-class Viper(Card):
-    damage = 1
-
-
-class Explorer(Card):
-    cost = 2
-    trade = 2
-    scrap_damage = 2
+Explorer = {
+    NAME: "Explorer",
+    COST: 2,
+    PLAY: {
+        TRADE: 2
+    },
+    SCRAP: {
+        DAMAGE: 2
+    }
+}
