@@ -55,11 +55,13 @@ class PlayerState(object):
             return self.zones[item]
 
     # Allow dict-style access to values and zones
-    def __setitem__(self, item, *args, **kwargs):
-        if item in self.values:
-            self.values.__setitem__(item, *args, **kwargs)
-        elif item in self.zones:
-            self.zones.__setitem__(item, *args, **kwargs)
+    # Presumes the key argument is an Enum value
+    def __setitem__(self, key, *args, **kwargs):
+        if key in self.values:
+            self.values.__setitem__(key, *args, **kwargs)
+        elif key in self.zones:
+            raise KeyError  # this probably shouldn't happen
+            # self.zones.__setitem__(item, *args, **kwargs)
         else:
             raise KeyError
 

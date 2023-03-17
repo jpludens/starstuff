@@ -1,5 +1,5 @@
 class Move(object):
-    # TODO: Add 'actor' to move
-    def __init__(self, action, target=None):
+    def __init__(self, actor, action, target=None):
+        self.actor = actor
         self.action = action
         self.target = target

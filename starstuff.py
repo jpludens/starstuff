@@ -1,8 +1,7 @@
-# Goal: Build in actually playing cards and counting trade/combat instead of the current hacks
-# Cleanup!  Make stuff less verbose
-
 # Goal: Build a logging system that can be toggled on/off
 #       log card movements, value changes, and actions initiated
+
+
 # Goal: Add all ships (use stubs for all abilities besides auth, trade, combat)
 # Goal: Add all ships (use stubs as above)
 # Goal: Implement card draw abilities
