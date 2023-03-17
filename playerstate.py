@@ -21,7 +21,7 @@ class PlayerState(object):
 
         self.discard = []
 
-        self.explorer_count = 0
+        self.metrics = {}
 
     def shuffle_deck(self):
         assert len(self.deck) == 0
@@ -39,3 +39,7 @@ class PlayerState(object):
                 except IndexError:
                     return
             self.hand.append(card)
+
+    def end_turn(self):
+        move_list_contents(self.hand, self.discard)
+        self.draw()

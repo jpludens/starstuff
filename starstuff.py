@@ -6,43 +6,31 @@ from collections import Counter
 from pprint import PrettyPrinter
 from gamestate import GameState
 from cards import Viper, Explorer
+from strategies import ExplorerStrategy
 
 
 def play_game():
-    gamestate = GameState()
+    alice_strategy = ExplorerStrategy(max_exp=25,
+                                      min_exp=6,
+                                      ratio=2)
 
+    bob_strategy = ExplorerStrategy(max_exp=25,
+                                    min_exp=6,
+                                    ratio=2)
+
+    gamestate = GameState(alice_strategy, bob_strategy)
+    gamestate.p1_state.metrics[Explorer] = 0
+    gamestate.p2_state.metrics[Explorer] = 0
     while gamestate.p1_state.authority > 0 and gamestate.p2_state.authority > 0:
         # Deal Viper Damage
         viper_damage = gamestate.active_player.hand.count(Viper)
         gamestate.inactive_player.authority -= viper_damage
 
         # Buy Explorers
-        explorers_to_buy = gamestate.active_player.strategy.get_explorers_to_buy(gamestate.active_player)
-        if explorers_to_buy:
-            gamestate.active_player.discard.extend([Explorer] * explorers_to_buy)
-            gamestate.active_player.explorer_count += explorers_to_buy
-            # print("Buying Explorers! {} snags {}.".format(gamestate.active_player.name, explorers_to_buy))
+        gamestate.active_player.strategy.buy_explorers(gamestate.active_player)
 
         # Scrap Explorers and Deal Explorer Damage
-        explorers_to_scrap = gamestate.active_player.strategy.get_explorers_to_scrap(gamestate.active_player)
-
-        explorer_damage = 0
-        while explorers_to_scrap:
-            try:
-                gamestate.active_player.hand.remove(Explorer)
-            except ValueError:
-                break
-            else:
-                explorer_damage += 2
-                gamestate.active_player.explorer_count -= 1
-
-        if explorer_damage:
-            gamestate.inactive_player.authority -= explorer_damage
-            # print("Scrapping Explorers, {} does {} Damage; {} now has {} Authority".format(
-            #     gamestate.active_player.name,
-            #     explorer_damage,
-            #     gamestate.inactive_player.name,
-            #     gamestate.inactive_player.authority))
+        gamestate.active_player.strategy.scrap_explorers(gamestate.active_player)
 
         # Check for Victory
         if gamestate.inactive_player.authority <= 0:
