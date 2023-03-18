@@ -2,32 +2,26 @@ from enum import Enum
 
 
 class CardAttrs(Enum):
+    FACTION = "FACTION"
     NAME = "NAME"
     COST = "COST"
-NAME = CardAttrs.NAME
-COST = CardAttrs.COST
+    ABILITY = "ABILITY"
 
 
 class Values(Enum):
-    AUTHORITY = "Authority"
-    TRADE = "Trade"
-    DAMAGE = "Damage"
-AUTHORITY = Values.AUTHORITY
-TRADE = Values.TRADE
-DAMAGE = Values.DAMAGE
+    AUTHORITY = "AUTHORITY"
+    TRADE = "TRADE"
+    DAMAGE = "DAMAGE"
+    ABILITY = "ABILITY"
 
 
 class Actions(Enum):
     BUY = "BUY"
     PLAY = "PLAY"
+    ALLY = "ALLY"
     SCRAP = "SCRAP"
     ATTACK = "ATTACK"
     END_TURN = "END_TURN"
-BUY = Actions.BUY
-PLAY = Actions.PLAY
-SCRAP = Actions.SCRAP
-ATTACK = Actions.ATTACK
-END_TURN = Actions.END_TURN
 
 
 class Zones(Enum):
@@ -37,9 +31,10 @@ class Zones(Enum):
     DISCARD = "DISCARD"
     TRADE_ROW = "TRADE_ROW"
     TRADE_DECK = "TRADE_DECK"
-DECK = Zones.DECK
-HAND = Zones.HAND
-IN_PLAY = Zones.IN_PLAY
-DISCARD = Zones.DISCARD
-TRADE_ROW = Zones.TRADE_ROW
-TRADE_DECK = Zones.TRADE_DECK
+
+
+class Factions(Enum):
+    BLOB = "BLOB"
+    TRADE_FEDERATION = "TRADE_FEDERATION"
+    MACHINE_CULT = "MACHINE_CULT"
+    STAR_EMPIRE = "STAR_EMPIRE"

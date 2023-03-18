@@ -1,9 +1,6 @@
-# Goal: Build a logging system that can be toggled on/off
-#       log card movements, value changes, and actions initiated
-
-
 # Goal: Add all ships (use stubs for all abilities besides auth, trade, combat)
-# Goal: Add all ships (use stubs as above)
+# Goal: Use a "faction" strategy to favor buying one color, see which is best for simple ships
+
 # Goal: Implement card draw abilities
 # Goal: Implement faction abilities
 #       need to track availabilityby individual card
@@ -12,15 +9,13 @@
 from collections import Counter
 from pprint import PrettyPrinter
 
-from enums import *
+from enums import Values
 from gamestate import GameState
-from strategies import ExplorerStrategy
+from strategies import ExplorerStrategy, SplurgeStrategy
 
 
 def play_game():
-    alice_strategy = ExplorerStrategy(max_exp=25,
-                                      min_exp=6,
-                                      ratio=2)
+    alice_strategy = SplurgeStrategy()
 
     bob_strategy = ExplorerStrategy(max_exp=25,
                                     min_exp=6,
@@ -33,7 +28,7 @@ def play_game():
             gamestate.do_move(move)
 
             # Check for Victory
-            if gamestate.inactive_player.state.values[AUTHORITY] <= 0:
+            if gamestate.inactive_player.state.values[Values.AUTHORITY] <= 0:
                 result = (1, gamestate.turn_number) if gamestate.active_player.name == "Alice" \
                     else (2, gamestate.turn_number)
                 return result

@@ -1,8 +1,10 @@
 import logging
-from enums import *
+from enums import Actions, CardAttrs, Values, Zones
+from random import shuffle
 from util import move_list_item
 from playerstate import Player, PlayerState
 from cards import Explorer
+from decks import get_fresh_trade_deck
 
 
 logger = logging.getLogger()
@@ -15,45 +17,61 @@ class GameState(object):
         self.alice = Player("Alice", alice_strategy, PlayerState(first_player=True))
         self.bob = Player("Bob", bob_strategy, PlayerState(first_player=False))
 
+        # Set up Trade Deck
+        self.trade_deck = get_fresh_trade_deck()
+        shuffle(self.trade_deck)
+        self.trade_row = []
+        self.fill_trade_row()
+
         # Set up for Turn 1
         self.turn_number = 1
         self.active_player = self.alice
         self.inactive_player = self.bob
 
     def do_move(self, move):
-        if move.action == PLAY:
-            logging.warning("{} is PLAYING: {}".format(move.actor.name, move.target[NAME]))
+        if move.action == Actions.PLAY:
+            logging.warning("{} is PLAYING: {}".format(move.actor.name, move.target.data[CardAttrs.NAME]))
             move_list_item(move.target,
-                           move.actor[HAND],
-                           move.actor[IN_PLAY])
+                           move.actor[Zones.HAND],
+                           move.actor[Zones.IN_PLAY])
             self.apply_abilities(move)
-        elif move.action == SCRAP:
-            logging.warning("{} is SCRAPPING: {}".format(move.actor.name, move.target[NAME]))
-            move_list_item(move.target, move.actor[IN_PLAY], [])
+        elif move.action == Actions.SCRAP:
+            logging.warning("{} is SCRAPPING: {}".format(move.actor.name, move.target.data[CardAttrs.NAME]))
+            move_list_item(move.target, move.actor[Zones.IN_PLAY], [])
             self.apply_abilities(move)
-        elif move.action == BUY:
-            # No trade deck yet, only Explorers, so append instead of move
-            logging.warning("{} is BUYING: {}".format(move.actor.name, move.target[NAME]))
-            assert move.target == Explorer
-            move.actor[TRADE] -= move.target[COST]
-            move.actor[DISCARD].append(move.target)
+        elif move.action == Actions.BUY:
+            logging.warning("{} is BUYING: {}".format(move.actor.name, move.target.data[CardAttrs.NAME]))
+
+            move.actor[Values.TRADE] -= move.target.data[CardAttrs.COST]
             logging.warning("{} spent {} TRADE and has {} remaining".format(move.actor.name,
-                                                                            move.target[COST],
-                                                                            move.actor[TRADE]))
-        elif move.action == ATTACK:
+                                                                            move.target.data[CardAttrs.COST],
+                                                                            move.actor[Values.TRADE]))
+
+            if move.target == Explorer:
+                move.actor[Zones.DISCARD].append(move.target)
+            else:
+                move_list_item(move.target, self.trade_row, move.actor[Zones.DISCARD])
+                self.fill_trade_row()
+        elif move.action == Actions.ATTACK:
             logging.warning("{} is ATTACKING {} for {} damage!".format(move.actor.name,
                                                                        move.target.name,
-                                                                       move.actor[DAMAGE]))
-            move.target[AUTHORITY] -= move.actor[DAMAGE]
-            move.actor[DAMAGE] = 0
+                                                                       move.actor[Values.DAMAGE]))
+            move.target[Values.AUTHORITY] -= move.actor[Values.DAMAGE]
+            move.actor[Values.DAMAGE] = 0
             logging.warning("{} has {} AUTHORITY remaining".format(move.target.name,
-                                                                   move.target[AUTHORITY]))
-        elif move.action == END_TURN:
+                                                                   move.target[Values.AUTHORITY]))
+        elif move.action == Actions.END_TURN:
             logging.warning("{} is ENDING THEIR TURN".format(move.actor.name))
             self.next_turn()
 
     def apply_abilities(self, move):
-        for value_type, value_amount in move.target[move.action].items():
+        for value_type, value_amount in move.target.data[move.action].items():
+            # Ignore abilities for now that aren't just adding numbers
+            if value_type not in [Values.DAMAGE, Values.TRADE, Values.AUTHORITY]:
+                logging.warning("Ignoring ability - {}: {}".format(value_type, value_amount))
+                continue
+
+            # Handle Authority, Trade, and Damage
             new_value = move.actor[value_type] + value_amount
             logging.warning("Adding {} to {}'s {} for a total of {}".format(value_amount,
                                                                             move.actor.name,
@@ -65,3 +83,12 @@ class GameState(object):
         self.active_player.state.end_turn()
         self.active_player, self.inactive_player = self.inactive_player, self.active_player
         self.turn_number += 1
+
+    def fill_trade_row(self):
+        cards_in_row = len(self.trade_row)
+        empty_slots = 5 - cards_in_row
+        new_cards = self.trade_deck[:empty_slots]
+        for new_card in new_cards:
+            logging.warning("Trade Row: {} added".format(new_card.data[CardAttrs.NAME]))
+            self.trade_row.append(new_card)
+        self.trade_deck[:empty_slots] = []
