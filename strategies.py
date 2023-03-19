@@ -1,5 +1,5 @@
 from cards import Explorer
-from enums import Actions, CardAttrs, Values, Zones
+from enums import Actions, CardAttrs, Values, Zones, Factions
 from move import Move
 
 
@@ -16,6 +16,42 @@ class Strategy(object):
     def get_end_turn(cls, gamestate):
         return [Move(gamestate.active_player, Actions.END_TURN)]
 
+    @classmethod
+    def get_buy_the_biggest(cls, gamestate, faction=None):
+        cards_by_cost = sorted(gamestate.trade_row, key=lambda c: c.data[CardAttrs.COST])
+        for card in cards_by_cost:
+            if faction is not None and faction != card.data[CardAttrs.FACTION]:
+                continue
+            if gamestate.active_player.state[Values.TRADE] >= card.data[CardAttrs.COST]:
+                return [Move(gamestate.active_player, Actions.BUY, card)]
+
+
+class FactionStrategy(Strategy):
+    def __init__(self, faction=Factions.TRADE_FEDERATION):
+        # TODO: improve strategy to handle ranked faction preferences
+        # TODO: improve strategy to buy explorers
+        self.faction = faction
+
+    def get_moves(self, gamestate):
+        playerstate = gamestate.active_player.state
+
+        # If we have cards, play them
+        if playerstate[Zones.HAND]:
+            return self.get_play_all_cards(gamestate)
+
+        # If we can afford a card, buy it, starting with the most expensive
+        if playerstate[Values.TRADE] > 0:
+            move = self.get_buy_the_biggest(gamestate, self.faction)
+            if move is not None:
+                return move
+
+        # If we can't buy, Attack!
+        if playerstate[Values.DAMAGE] > 0:
+            return self.get_attack_opponent(gamestate)
+
+        # If we can't Attack, End Turn
+        return self.get_end_turn(gamestate)
+
 
 class SplurgeStrategy(Strategy):
     def get_moves(self, gamestate):
@@ -27,11 +63,9 @@ class SplurgeStrategy(Strategy):
 
         # If we can afford a card, buy it, starting with the most expensive
         if playerstate[Values.TRADE] > 0:
-            # Get the most expensive card -
-            cards_by_cost = sorted(gamestate.trade_row, key=lambda c: c.data[CardAttrs.COST])
-            for card in cards_by_cost:
-                if playerstate[Values.TRADE] >= card.data[CardAttrs.COST]:
-                    return [Move(gamestate.active_player, Actions.BUY, card)]
+            move = self.get_buy_the_biggest(gamestate)
+            if move is not None:
+                return move
 
         # If we can't buy, Attack!
         if playerstate[Values.DAMAGE] > 0:

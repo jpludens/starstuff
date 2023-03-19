@@ -8,7 +8,7 @@ from decks import get_fresh_trade_deck
 
 
 logger = logging.getLogger()
-logger.setLevel(logging.WARNING)
+logger.setLevel(logging.ERROR)
 
 
 class GameState(object):
@@ -21,7 +21,7 @@ class GameState(object):
         self.trade_deck = get_fresh_trade_deck()
         shuffle(self.trade_deck)
         self.trade_row = []
-        self.fill_trade_row()
+        self._fill_trade_row()
 
         # Set up for Turn 1
         self.turn_number = 1
@@ -34,11 +34,11 @@ class GameState(object):
             move_list_item(move.target,
                            move.actor[Zones.HAND],
                            move.actor[Zones.IN_PLAY])
-            self.apply_abilities(move)
+            self._apply_abilities(move)
         elif move.action == Actions.SCRAP:
             logging.warning("{} is SCRAPPING: {}".format(move.actor.name, move.target.data[CardAttrs.NAME]))
             move_list_item(move.target, move.actor[Zones.IN_PLAY], [])
-            self.apply_abilities(move)
+            self._apply_abilities(move)
         elif move.action == Actions.BUY:
             logging.warning("{} is BUYING: {}".format(move.actor.name, move.target.data[CardAttrs.NAME]))
 
@@ -51,7 +51,7 @@ class GameState(object):
                 move.actor[Zones.DISCARD].append(move.target)
             else:
                 move_list_item(move.target, self.trade_row, move.actor[Zones.DISCARD])
-                self.fill_trade_row()
+                self._fill_trade_row()
         elif move.action == Actions.ATTACK:
             logging.warning("{} is ATTACKING {} for {} damage!".format(move.actor.name,
                                                                        move.target.name,
@@ -62,9 +62,11 @@ class GameState(object):
                                                                    move.target[Values.AUTHORITY]))
         elif move.action == Actions.END_TURN:
             logging.warning("{} is ENDING THEIR TURN".format(move.actor.name))
-            self.next_turn()
+            self.active_player.state.end_turn()
+            self.active_player, self.inactive_player = self.inactive_player, self.active_player
+            self.turn_number += 1
 
-    def apply_abilities(self, move):
+    def _apply_abilities(self, move):
         for value_type, value_amount in move.target.data[move.action].items():
             # Ignore abilities for now that aren't just adding numbers
             if value_type not in [Values.DAMAGE, Values.TRADE, Values.AUTHORITY]:
@@ -79,12 +81,7 @@ class GameState(object):
                                                                             new_value))
             self.active_player[value_type] = new_value
 
-    def next_turn(self):
-        self.active_player.state.end_turn()
-        self.active_player, self.inactive_player = self.inactive_player, self.active_player
-        self.turn_number += 1
-
-    def fill_trade_row(self):
+    def _fill_trade_row(self):
         cards_in_row = len(self.trade_row)
         empty_slots = 5 - cards_in_row
         new_cards = self.trade_deck[:empty_slots]

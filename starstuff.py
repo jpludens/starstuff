@@ -1,4 +1,3 @@
-# Goal: Add all ships (use stubs for all abilities besides auth, trade, combat)
 # Goal: Use a "faction" strategy to favor buying one color, see which is best for simple ships
 
 # Goal: Implement card draw abilities
@@ -9,17 +8,19 @@
 from collections import Counter
 from pprint import PrettyPrinter
 
-from enums import Values
+from enums import Factions, Values
 from gamestate import GameState
-from strategies import ExplorerStrategy, SplurgeStrategy
+from strategies import ExplorerStrategy, SplurgeStrategy, FactionStrategy
 
 
 def play_game():
-    alice_strategy = SplurgeStrategy()
+    alice_strategy = FactionStrategy(Factions.BLOB)
 
-    bob_strategy = ExplorerStrategy(max_exp=25,
-                                    min_exp=6,
-                                    ratio=2)
+    bob_strategy = FactionStrategy(Factions.TRADE_FEDERATION)
+
+    carter_strategy = ExplorerStrategy(max_exp=25,
+                                       min_exp=6,
+                                       ratio=2)
 
     gamestate = GameState(alice_strategy, bob_strategy)
     while True:
