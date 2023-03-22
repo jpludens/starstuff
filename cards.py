@@ -1,4 +1,4 @@
-from enums import Actions, CardAttrs, Factions, Values
+from enums import Abilities, Actions, CardAttrs, Factions, Values
 
 
 class Card(object):
@@ -49,7 +49,7 @@ class BlobFighter(Card):
             Values.DAMAGE: 3
         },
         Actions.ALLY: {
-            CardAttrs.ABILITY: "Draw"
+            Abilities.DRAW: 1
         }
     }
 
@@ -136,7 +136,7 @@ class BattleBlob(Card):
             Values.DAMAGE: 8
         },
         Actions.ALLY: {
-            CardAttrs.ABILITY: "Draw"
+            Abilities.DRAW: 1
         },
         Actions.SCRAP: {
             Values.DAMAGE: 4
@@ -151,10 +151,10 @@ class Mothership(Card):
         CardAttrs.COST: 6,
         Actions.PLAY: {
             Values.DAMAGE: 6,
-            CardAttrs.ABILITY: "Draw"
+            Abilities.DRAW: 1
         },
         Actions.ALLY: {
-            CardAttrs.ABILITY: "Draw"
+            Abilities.DRAW: 1
         }
     }
 
@@ -226,7 +226,7 @@ class TradeEscort(Card):
             Values.DAMAGE: 4,
         },
         Actions.ALLY: {
-            CardAttrs.ABILITY: "Draw"
+            Abilities.DRAW: 1
         }
     }
 
@@ -238,7 +238,7 @@ class Flagship(Card):
         CardAttrs.COST: 6,
         Actions.PLAY: {
             Values.DAMAGE: 5,
-            CardAttrs.ABILITY: "Draw"
+            Abilities.DRAW: 1
         },
         Actions.ALLY: {
             Values.AUTHORITY: 5,
@@ -254,7 +254,7 @@ class CommandShip(Card):
         Actions.PLAY: {
             Values.AUTHORITY: 4,
             Values.DAMAGE: 5,
-            CardAttrs.ABILITY: "Draw TWO"
+            Abilities.DRAW: 2
         },
         Actions.ALLY: {
             CardAttrs.ABILITY: "Blow Base"
@@ -342,7 +342,7 @@ class BattleMech(Card):
             CardAttrs.ABILITY: Actions.SCRAP
         },
         Actions.ALLY: {
-            CardAttrs.ABILITY: "Draw"
+            Abilities.DRAW: 1
         }
     }
 
@@ -360,7 +360,7 @@ class MissileMech(Card):
             Values.AUTHORITY: 0,
             Values.TRADE: 2,
             Values.DAMAGE: 0,
-            CardAttrs.ABILITY: "Draw"
+            Abilities.DRAW: 1
         }
     }
 
@@ -387,7 +387,7 @@ class Corvette(Card):
         CardAttrs.COST: 2,
         Actions.PLAY: {
             Values.DAMAGE: 1,
-            CardAttrs.ABILITY: "Draw"
+            Abilities.DRAW: 1
         },
         Actions.ALLY: {
             Values.DAMAGE: 2,
@@ -402,7 +402,7 @@ class SurveyShip(Card):
         CardAttrs.COST: 3,
         Actions.PLAY: {
             Values.TRADE: 3,
-            CardAttrs.ABILITY: "Draw"
+            Abilities.DRAW: 1
         },
         Actions.SCRAP: {
             CardAttrs.ABILITY: "Discard"
@@ -423,7 +423,7 @@ class ImperialFrigate(Card):
             Values.DAMAGE: 2,
         },
         Actions.SCRAP: {
-            CardAttrs.ABILITY: "Draw"
+            Abilities.DRAW: 1
         }
 
     }
@@ -436,7 +436,7 @@ class BattleCruiser(Card):
         CardAttrs.COST: 6,
         Actions.PLAY: {
             Values.DAMAGE: 6,
-            CardAttrs.ABILITY: "Draw"
+            Abilities.DRAW: 1
         },
         Actions.ALLY: {
             CardAttrs.ABILITY: "Discard"
@@ -454,7 +454,7 @@ class Dreadnought(Card):
         CardAttrs.COST: 7,
         Actions.PLAY: {
             Values.DAMAGE: 7,
-            CardAttrs.ABILITY: "Draw"
+            Abilities.DRAW: 1
         },
         Actions.SCRAP: {
             Values.DAMAGE: 5,

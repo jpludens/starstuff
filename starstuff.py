@@ -1,9 +1,14 @@
-# Goal: Use a "faction" strategy to favor buying one color, see which is best for simple ships
-
-# Goal: Implement card draw abilities
+# Goal: Implement bases
 # Goal: Implement faction abilities
 #       need to track availabilityby individual card
 # Goal: Implement remaining abilities
+
+# Goal: Create a data visualisation scheme for displaying an entire game's log of moves
+#       (eg, cards bought each round, additional cards drawn, damage done, etc)
+# Goal: Create a data analysis scheme for analyzing decks (and trade row favorablity)
+#       (eg, x combat guaranteed y combat possible per cycle; velocity (turns/cycle))
+# Goal: Create a data visualation scheme for deck progress throughout a game
+#       (eg, graph combat and trade potential over time)
 
 from collections import Counter
 from pprint import PrettyPrinter
@@ -40,6 +45,6 @@ def battle(n=1):
     print("Player 1 Wins: {}\nPlayer 2 Wins: {}".format(len([r for r in results if r[0] == 1]),
                                                         len([r for r in results if r[0] == 2])))
     print("Player 1 Victory Turn Numbers:")
-    PrettyPrinter().pprint(Counter([result[1] for result in results if result[0] == 1]))
+    PrettyPrinter().pprint(sorted(Counter([result[1] for result in results if result[0] == 1]).items()))
     print("Player 2 Victory Turn Numbers:")
-    PrettyPrinter().pprint(Counter([result[1] for result in results if result[0] == 2]))
+    PrettyPrinter().pprint(sorted(Counter([result[1] for result in results if result[0] == 2]).items()))

@@ -1,5 +1,5 @@
 import logging
-from enums import Actions, CardAttrs, Values, Zones
+from enums import Abilities, Actions, CardAttrs, Values, Zones
 from random import shuffle
 from util import move_list_item
 from playerstate import Player, PlayerState
@@ -8,7 +8,7 @@ from decks import get_fresh_trade_deck
 
 
 logger = logging.getLogger()
-logger.setLevel(logging.ERROR)
+logger.setLevel(logging.WARNING)
 
 
 class GameState(object):
@@ -67,19 +67,21 @@ class GameState(object):
             self.turn_number += 1
 
     def _apply_abilities(self, move):
-        for value_type, value_amount in move.target.data[move.action].items():
-            # Ignore abilities for now that aren't just adding numbers
-            if value_type not in [Values.DAMAGE, Values.TRADE, Values.AUTHORITY]:
-                logging.warning("Ignoring ability - {}: {}".format(value_type, value_amount))
-                continue
+        for key, value in move.target.data[move.action].items():
+            if key in [Values.DAMAGE, Values.TRADE, Values.AUTHORITY]:
+                new_value = move.actor[key] + value
+                logging.warning("Adding {} to {}'s {} for a total of {}".format(value,
+                                                                                move.actor.name,
+                                                                                key.name,
+                                                                                new_value))
+                self.active_player[key] = new_value
 
-            # Handle Authority, Trade, and Damage
-            new_value = move.actor[value_type] + value_amount
-            logging.warning("Adding {} to {}'s {} for a total of {}".format(value_amount,
-                                                                            move.actor.name,
-                                                                            value_type.name,
-                                                                            new_value))
-            self.active_player[value_type] = new_value
+            elif key == Abilities.DRAW:
+                move.actor.state.draw(1)
+                logging.warning("{} DRAWS a card".format(move.actor.name))
+
+            else:
+                logging.warning("Ignoring ability - {}: {}".format(key, value))
 
     def _fill_trade_row(self):
         cards_in_row = len(self.trade_row)

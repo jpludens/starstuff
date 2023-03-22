@@ -38,3 +38,7 @@ class Factions(Enum):
     TRADE_FEDERATION = "TRADE_FEDERATION"
     MACHINE_CULT = "MACHINE_CULT"
     STAR_EMPIRE = "STAR_EMPIRE"
+
+
+class Abilities(Enum):
+    DRAW = "DRAW"
