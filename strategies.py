@@ -26,6 +26,25 @@ class Strategy(object):
                 return [Move(gamestate.active_player, Actions.BUY, card)]
 
 
+class BasicStrategy(Strategy):
+    def get_moves(self, gamestate):
+        sequence = [self.get_purchases,
+                    self.get_explorer_purchases,
+                    self.get_attack_opponent,
+                    self.get_end_turn]
+        for step in sequence:
+            moves = step(gamestate)
+            if moves:
+                return moves
+
+    def get_purchases(self, gamestate):
+        raise NotImplementedError
+
+    def get_explorer_purchases(self, gamestate):
+        raise NotImplementedError
+
+
+
 class FactionStrategy(Strategy):
     def __init__(self, faction=Factions.TRADE_FEDERATION):
         # TODO: improve strategy to handle ranked faction preferences
