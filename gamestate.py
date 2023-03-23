@@ -3,7 +3,7 @@ from enums import Abilities, Actions, CardAttrs, Values, Zones
 from random import shuffle
 from util import move_list_item
 from playerstate import Player, PlayerState
-from cards import Explorer
+from cards import Explorer, PlayedCard
 from decks import get_fresh_trade_deck
 
 
@@ -29,6 +29,8 @@ class GameState(object):
         self.inactive_player = self.bob
 
     def do_move(self, move):
+        # TODO: Accept ACTIVATE_BASE action
+        # TODO: Track activated vs unactivated bases
         if move.action == Actions.PLAY:
             logging.warning("{} is PLAYING: {}".format(move.actor.name, move.target.data[CardAttrs.NAME]))
             move_list_item(move.target,

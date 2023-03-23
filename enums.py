@@ -6,13 +6,17 @@ class CardAttrs(Enum):
     NAME = "NAME"
     COST = "COST"
     ABILITY = "ABILITY"
+    SHIP = "SHIP"
+    BASE = "BASE"
+    OUTPOST = "OUTPOST"
+    DEFENSE = "DEFENSE"
 
 
 class Values(Enum):
     AUTHORITY = "AUTHORITY"
     TRADE = "TRADE"
     DAMAGE = "DAMAGE"
-    ABILITY = "ABILITY"
+    ABILITY = "ABILITY"  # TODO: Replace this over time with Ability values
 
 
 class Actions(Enum):
@@ -22,6 +26,7 @@ class Actions(Enum):
     SCRAP = "SCRAP"
     ATTACK = "ATTACK"
     END_TURN = "END_TURN"
+    ACTIVATE_BASE = "ACTIVATE_BASE"
 
 
 class Zones(Enum):

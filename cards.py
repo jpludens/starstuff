@@ -8,6 +8,7 @@ class Card(object):
 # Boring Ships
 class Scout(Card):
     data = {
+        CardAttrs.SHIP: True,
         CardAttrs.NAME: "Scout",
         CardAttrs.COST: 0,
         Actions.PLAY: {
@@ -18,6 +19,7 @@ class Scout(Card):
 
 class Viper(Card):
     data = {
+        CardAttrs.SHIP: True,
         CardAttrs.NAME: "Viper",
         CardAttrs.COST: 0,
         Actions.PLAY: {
@@ -28,6 +30,7 @@ class Viper(Card):
 
 class Explorer(Card):
     data = {
+        CardAttrs.SHIP: True,
         CardAttrs.NAME: "Explorer",
         CardAttrs.COST: 2,
         Actions.PLAY: {
@@ -42,6 +45,7 @@ class Explorer(Card):
 # Blob Ships
 class BlobFighter(Card):
     data = {
+        CardAttrs.SHIP: True,
         CardAttrs.FACTION: Factions.BLOB,
         CardAttrs.NAME: "Blob Fighter",
         CardAttrs.COST: 1,
@@ -56,6 +60,7 @@ class BlobFighter(Card):
 
 class TradePod(Card):
     data = {
+        CardAttrs.SHIP: True,
         CardAttrs.FACTION: Factions.BLOB,
         CardAttrs.NAME: "Trade Pod",
         CardAttrs.COST: 2,
@@ -70,6 +75,7 @@ class TradePod(Card):
 
 class BattlePod(Card):
     data = {
+        CardAttrs.SHIP: True,
         CardAttrs.FACTION: Factions.BLOB,
         CardAttrs.NAME: "Battle Pod",
         CardAttrs.COST: 2,
@@ -84,6 +90,7 @@ class BattlePod(Card):
 
 class Ram(Card):
     data = {
+        CardAttrs.SHIP: True,
         CardAttrs.FACTION: Factions.BLOB,
         CardAttrs.NAME: "Ram",
         CardAttrs.COST: 3,
@@ -101,6 +108,7 @@ class Ram(Card):
 
 class BlobDestroyer(Card):
     data = {
+        CardAttrs.SHIP: True,
         CardAttrs.FACTION: Factions.BLOB,
         CardAttrs.NAME: "Blob Destroyer",
         CardAttrs.COST: 4,
@@ -115,6 +123,7 @@ class BlobDestroyer(Card):
 
 class BlobCarrier(Card):
     data = {
+        CardAttrs.SHIP: True,
         CardAttrs.FACTION: Factions.BLOB,
         CardAttrs.NAME: "Blob Carrier",
         CardAttrs.COST: 6,
@@ -129,6 +138,7 @@ class BlobCarrier(Card):
 
 class BattleBlob(Card):
     data = {
+        CardAttrs.SHIP: True,
         CardAttrs.FACTION: Factions.BLOB,
         CardAttrs.NAME: "Battle Blob",
         CardAttrs.COST: 6,
@@ -146,6 +156,7 @@ class BattleBlob(Card):
 
 class Mothership(Card):
     data = {
+        CardAttrs.SHIP: True,
         CardAttrs.FACTION: Factions.BLOB,
         CardAttrs.NAME: "Mothership",
         CardAttrs.COST: 6,
@@ -159,9 +170,56 @@ class Mothership(Card):
     }
 
 
+# Blob Bases
+class BlobWheel(Card):
+    data = {
+        CardAttrs.BASE: True,
+        CardAttrs.FACTION: Factions.BLOB,
+        CardAttrs.NAME: "Blob Wheel",
+        CardAttrs.COST: 3,
+        CardAttrs.DEFENSE: 5,
+        Actions.ACTIVATE_BASE: {
+            Values.DAMAGE: 1,
+        },
+        Actions.SCRAP: {
+            Values.TRADE: 3
+        }
+    }
+
+
+class TheHive(Card):
+    data = {
+        CardAttrs.BASE: True,
+        CardAttrs.FACTION: Factions.BLOB,
+        CardAttrs.NAME: "The Hive",
+        CardAttrs.COST: 5,
+        CardAttrs.DEFENSE: 5,
+        Actions.ACTIVATE_BASE: {
+            Values.DAMAGE: 3,
+        },
+        Actions.ALLY: {
+            Abilities.DRAW: 1
+        }
+    }
+
+
+class BlobWorld(Card):
+    data = {
+        CardAttrs.BASE: True,
+        CardAttrs.FACTION: Factions.BLOB,
+        CardAttrs.NAME: "Blob World",
+        CardAttrs.COST: 8,
+        CardAttrs.DEFENSE: 8,
+        Actions.ACTIVATE_BASE: {
+            CardAttrs.ABILITY: "Blob World Choice"
+        }
+    }
+
+
 # Federation Ships
 class FederationShuttle(Card):
     data = {
+        CardAttrs.SHIP: True,
         CardAttrs.FACTION: Factions.TRADE_FEDERATION,
         CardAttrs.NAME: "Federation Shuttle",
         CardAttrs.COST: 1,
@@ -176,6 +234,7 @@ class FederationShuttle(Card):
 
 class Cutter(Card):
     data = {
+        CardAttrs.SHIP: True,
         CardAttrs.FACTION: Factions.TRADE_FEDERATION,
         CardAttrs.NAME: "Cutter",
         CardAttrs.COST: 2,
@@ -191,6 +250,7 @@ class Cutter(Card):
 
 class EmbassyYacht(Card):
     data = {
+        CardAttrs.SHIP: True,
         CardAttrs.FACTION: Factions.TRADE_FEDERATION,
         CardAttrs.NAME: "Embassy Yacht",
         CardAttrs.COST: 3,
@@ -204,6 +264,7 @@ class EmbassyYacht(Card):
 
 class Freighter(Card):
     data = {
+        CardAttrs.SHIP: True,
         CardAttrs.FACTION: Factions.TRADE_FEDERATION,
         CardAttrs.NAME: "Freighter",
         CardAttrs.COST: 4,
@@ -218,6 +279,7 @@ class Freighter(Card):
 
 class TradeEscort(Card):
     data = {
+        CardAttrs.SHIP: True,
         CardAttrs.FACTION: Factions.TRADE_FEDERATION,
         CardAttrs.NAME: "Trade Escort",
         CardAttrs.COST: 5,
@@ -233,6 +295,7 @@ class TradeEscort(Card):
 
 class Flagship(Card):
     data = {
+        CardAttrs.SHIP: True,
         CardAttrs.FACTION: Factions.TRADE_FEDERATION,
         CardAttrs.NAME: "Flagship",
         CardAttrs.COST: 6,
@@ -248,6 +311,7 @@ class Flagship(Card):
 
 class CommandShip(Card):
     data = {
+        CardAttrs.SHIP: True,
         CardAttrs.FACTION: Factions.TRADE_FEDERATION,
         CardAttrs.NAME: "Command Ship",
         CardAttrs.COST: 8,
@@ -262,8 +326,96 @@ class CommandShip(Card):
     }
 
 
+# Trade Federation Bases
+class TradingPost(Card):
+    data = {
+        CardAttrs.BASE: True,
+        CardAttrs.OUTPOST: True,
+        CardAttrs.FACTION: Factions.TRADE_FEDERATION,
+        CardAttrs.NAME: "Trading Post",
+        CardAttrs.COST: 3,
+        CardAttrs.DEFENSE: 4,
+        Actions.ACTIVATE_BASE: {
+            CardAttrs.ABILITY: "1 Authority or Trade"
+        },
+        Actions.SCRAP: {
+            Values.DAMAGE: 3
+        }
+    }
+
+
+class BarterWorld(Card):
+    data = {
+        CardAttrs.BASE: True,
+        CardAttrs.FACTION: Factions.TRADE_FEDERATION,
+        CardAttrs.NAME: "Barter World",
+        CardAttrs.COST: 4,
+        CardAttrs.DEFENSE: 4,
+        Actions.ACTIVATE_BASE: {
+            CardAttrs.ABILITY: "2 Authority or Trade"
+        },
+        Actions.SCRAP: {
+            Values.DAMAGE: 5
+        }
+    }
+
+
+class DefenseCenter(Card):
+    data = {
+        CardAttrs.BASE: True,
+        CardAttrs.OUTPOST: True,
+        CardAttrs.FACTION: Factions.TRADE_FEDERATION,
+        CardAttrs.NAME: "Defense Center",
+        CardAttrs.COST: 5,
+        CardAttrs.DEFENSE: 5,
+        Actions.ACTIVATE_BASE: {
+            CardAttrs.ABILITY: "3 Authority or 2 Damage"
+        },
+        Actions.ALLY: {
+            Values.DAMAGE: 2
+        }
+    }
+
+
+class PortOfCall(Card):
+    data = {
+        CardAttrs.BASE: True,
+        CardAttrs.OUTPOST: True,
+        CardAttrs.FACTION: Factions.TRADE_FEDERATION,
+        CardAttrs.NAME: "Port Of Call",
+        CardAttrs.COST: 6,
+        CardAttrs.DEFENSE: 6,
+        Actions.ACTIVATE_BASE: {
+            Values.TRADE: 3
+        },
+        Actions.SCRAP: {
+            Abilities.DRAW: 1,
+            CardAttrs.ABILITY: "Blow Base"
+        }
+    }
+
+
+class CentralOffice(Card):
+    data = {
+        CardAttrs.BASE: True,
+        CardAttrs.FACTION: Factions.TRADE_FEDERATION,
+        CardAttrs.NAME: "Central Office",
+        CardAttrs.COST: 7,
+        CardAttrs.DEFENSE: 6,
+        Actions.ACTIVATE_BASE: {
+            Values.TRADE: 2,
+            CardAttrs.ABILITY: "Freighter"
+        },
+        Actions.ALLY: {
+            Abilities.DRAW: 1
+        }
+    }
+
+
+# Machine Cult Ships
 class TradeBot(Card):
     data = {
+        CardAttrs.SHIP: True,
         CardAttrs.FACTION: Factions.MACHINE_CULT,
         CardAttrs.NAME: "Trade Bot",
         CardAttrs.COST: 1,
@@ -279,6 +431,7 @@ class TradeBot(Card):
 
 class MissileBot(Card):
     data = {
+        CardAttrs.SHIP: True,
         CardAttrs.FACTION: Factions.MACHINE_CULT,
         CardAttrs.NAME: "Missile Bot",
         CardAttrs.COST: 2,
@@ -294,6 +447,7 @@ class MissileBot(Card):
 
 class SupplyBot(Card):
     data = {
+        CardAttrs.SHIP: True,
         CardAttrs.FACTION: Factions.MACHINE_CULT,
         CardAttrs.NAME: "Supply Bot",
         CardAttrs.COST: 3,
@@ -309,6 +463,7 @@ class SupplyBot(Card):
 
 class PatrolMech(Card):
     data = {
+        CardAttrs.SHIP: True,
         CardAttrs.FACTION: Factions.MACHINE_CULT,
         CardAttrs.NAME: "Patrol Mech",
         CardAttrs.COST: 4,
@@ -323,6 +478,7 @@ class PatrolMech(Card):
 
 class StealthNeedle(Card):
     data = {
+        CardAttrs.SHIP: True,
         CardAttrs.FACTION: Factions.MACHINE_CULT,
         CardAttrs.NAME: "Stealth Needle",
         CardAttrs.COST: 4,
@@ -334,6 +490,7 @@ class StealthNeedle(Card):
 
 class BattleMech(Card):
     data = {
+        CardAttrs.SHIP: True,
         CardAttrs.FACTION: Factions.MACHINE_CULT,
         CardAttrs.NAME: "Battle Mech",
         CardAttrs.COST: 5,
@@ -349,6 +506,7 @@ class BattleMech(Card):
 
 class MissileMech(Card):
     data = {
+        CardAttrs.SHIP: True,
         CardAttrs.FACTION: Factions.MACHINE_CULT,
         CardAttrs.NAME: "Missile Mech",
         CardAttrs.COST: 6,
@@ -365,8 +523,81 @@ class MissileMech(Card):
     }
 
 
+# Machine Cult Bases
+class BattleStation(Card):
+    data = {
+        CardAttrs.BASE: True,
+        CardAttrs.OUTPOST: True,
+        CardAttrs.FACTION: Factions.MACHINE_CULT,
+        CardAttrs.NAME: "Battle Station",
+        CardAttrs.COST: 3,
+        CardAttrs.DEFENSE: 5,
+        Actions.SCRAP: {
+            Values.DAMAGE: 5,
+        }
+    }
+
+
+class MechWorld(Card):
+    data = {
+        CardAttrs.BASE: True,
+        CardAttrs.OUTPOST: True,
+        CardAttrs.FACTION: Factions.MACHINE_CULT,
+        CardAttrs.NAME: "Mech World",
+        CardAttrs.COST: 5,
+        CardAttrs.DEFENSE: 6,
+        Actions.ACTIVATE_BASE: {
+            CardAttrs.ABILITY: "Mech World"
+        }
+    }
+
+
+class Junkyard(Card):
+    data = {
+        CardAttrs.BASE: True,
+        CardAttrs.OUTPOST: True,
+        CardAttrs.FACTION: Factions.MACHINE_CULT,
+        CardAttrs.NAME: "Junkyard",
+        CardAttrs.COST: 6,
+        CardAttrs.DEFENSE: 5,
+        Actions.ACTIVATE_BASE: {
+            CardAttrs.ABILITY: Actions.SCRAP
+        }
+    }
+
+
+class MachineBase(Card):
+    data = {
+        CardAttrs.BASE: True,
+        CardAttrs.OUTPOST: True,
+        CardAttrs.FACTION: Factions.MACHINE_CULT,
+        CardAttrs.NAME: "MachineBase",
+        CardAttrs.COST: 7,
+        CardAttrs.DEFENSE: 6,
+        Actions.ACTIVATE_BASE: {
+            CardAttrs.ABILITY: "Machine Base"
+        }
+    }
+
+
+class BrainWorld(Card):
+    data = {
+        CardAttrs.BASE: True,
+        CardAttrs.OUTPOST: True,
+        CardAttrs.FACTION: Factions.MACHINE_CULT,
+        CardAttrs.NAME: "Brain World",
+        CardAttrs.COST: 8,
+        CardAttrs.DEFENSE: 6,
+        Actions.ACTIVATE_BASE: {
+            CardAttrs.ABILITY: "Brain World"
+        }
+    }
+
+
+# Star Empire Ships
 class ImperialFighter(Card):
     data = {
+        CardAttrs.SHIP: True,
         CardAttrs.FACTION: Factions.STAR_EMPIRE,
         CardAttrs.NAME: "Imperial Fighter",
         CardAttrs.COST: 1,
@@ -382,6 +613,7 @@ class ImperialFighter(Card):
 
 class Corvette(Card):
     data = {
+        CardAttrs.SHIP: True,
         CardAttrs.FACTION: Factions.STAR_EMPIRE,
         CardAttrs.NAME: "Corvette",
         CardAttrs.COST: 2,
@@ -397,6 +629,7 @@ class Corvette(Card):
 
 class SurveyShip(Card):
     data = {
+        CardAttrs.SHIP: True,
         CardAttrs.FACTION: Factions.STAR_EMPIRE,
         CardAttrs.NAME: "Survey Ship",
         CardAttrs.COST: 3,
@@ -412,6 +645,7 @@ class SurveyShip(Card):
 
 class ImperialFrigate(Card):
     data = {
+        CardAttrs.SHIP: True,
         CardAttrs.FACTION: Factions.STAR_EMPIRE,
         CardAttrs.NAME: "Imperial Frigate",
         CardAttrs.COST: 3,
@@ -431,6 +665,7 @@ class ImperialFrigate(Card):
 
 class BattleCruiser(Card):
     data = {
+        CardAttrs.SHIP: True,
         CardAttrs.FACTION: Factions.STAR_EMPIRE,
         CardAttrs.NAME: "BattleCruiser",
         CardAttrs.COST: 6,
@@ -449,6 +684,7 @@ class BattleCruiser(Card):
 
 class Dreadnought(Card):
     data = {
+        CardAttrs.SHIP: True,
         CardAttrs.FACTION: Factions.STAR_EMPIRE,
         CardAttrs.NAME: "Dreadnought",
         CardAttrs.COST: 7,
@@ -458,5 +694,87 @@ class Dreadnought(Card):
         },
         Actions.SCRAP: {
             Values.DAMAGE: 5,
+        }
+    }
+
+
+# Star Empire Bases
+class RecyclingStation(Card):
+    data = {
+        CardAttrs.BASE: True,
+        CardAttrs.OUTPOST: True,
+        CardAttrs.FACTION: Factions.STAR_EMPIRE,
+        CardAttrs.NAME: "Recycling Station",
+        CardAttrs.COST: 4,
+        CardAttrs.DEFENSE: 4,
+        Actions.ACTIVATE_BASE: {
+            CardAttrs.ABILITY: "Recycling Station"
+        }
+    }
+
+
+class SpaceStation(Card):
+    data = {
+        CardAttrs.BASE: True,
+        CardAttrs.OUTPOST: True,
+        CardAttrs.FACTION: Factions.STAR_EMPIRE,
+        CardAttrs.NAME: "Space Station",
+        CardAttrs.COST: 4,
+        CardAttrs.DEFENSE: 4,
+        Actions.ACTIVATE_BASE: {
+            Values.DAMAGE: 2
+        },
+        Actions.ALLY: {
+            Values.DAMAGE: 2
+        },
+        Actions.SCRAP: {
+            Values.TRADE: 4
+        }
+    }
+
+
+class WarWorld(Card):
+    data = {
+        CardAttrs.BASE: True,
+        CardAttrs.OUTPOST: True,
+        CardAttrs.FACTION: Factions.STAR_EMPIRE,
+        CardAttrs.NAME: "War World",
+        CardAttrs.COST: 5,
+        CardAttrs.DEFENSE: 4,
+        Actions.ACTIVATE_BASE: {
+            Values.DAMAGE: 3
+        },
+        Actions.ALLY: {
+            Values.DAMAGE: 4
+        }
+    }
+
+
+class RoyalRedoubt(Card):
+    data = {
+        CardAttrs.BASE: True,
+        CardAttrs.OUTPOST: True,
+        CardAttrs.FACTION: Factions.STAR_EMPIRE,
+        CardAttrs.NAME: "Royal Redoubt",
+        CardAttrs.COST: 6,
+        CardAttrs.DEFENSE: 6,
+        Actions.ACTIVATE_BASE: {
+            Values.DAMAGE: 3
+        },
+        Actions.ALLY: {
+            CardAttrs.ABILITY: "Discard"
+        }
+    }
+
+
+class FleetHQ(Card):
+    data = {
+        CardAttrs.BASE: True,
+        CardAttrs.FACTION: Factions.STAR_EMPIRE,
+        CardAttrs.NAME: "FleetHQ",
+        CardAttrs.COST: 8,
+        CardAttrs.DEFENSE: 8,
+        Actions.ACTIVATE_BASE: {
+            CardAttrs.ABILITY: "Fleet HQ"
         }
     }
