@@ -9,6 +9,9 @@ standard_deck = {
     BlobCarrier: 1,
     BattleBlob: 1,
     Mothership: 1,
+    BlobWheel: 3,
+    TheHive: 1,
+    BlobWorld: 1,
     FederationShuttle: 3,
     Cutter: 3,
     EmbassyYacht: 2,
@@ -16,6 +19,11 @@ standard_deck = {
     TradeEscort: 1,
     Flagship: 1,
     CommandShip: 1,
+    TradingPost: 2,
+    BarterWorld: 2,
+    DefenseCenter: 1,
+    PortOfCall: 1,
+    CentralOffice: 1,
     TradeBot: 3,
     MissileBot: 3,
     SupplyBot: 3,
@@ -23,14 +31,24 @@ standard_deck = {
     StealthNeedle: 1,
     BattleMech: 1,
     MissileMech: 1,
+    BattleStation: 2,
+    MechWorld: 1,
+    Junkyard: 1,
+    MachineBase: 1,
+    BrainWorld: 1,
     ImperialFighter: 3,
     Corvette: 2,
     SurveyShip: 3,
     ImperialFrigate: 3,
     BattleCruiser: 1,
-    Dreadnought: 1
+    Dreadnought: 1,
+    RecyclingStation: 2,
+    SpaceStation: 2,
+    WarWorld: 1,
+    RoyalRedoubt: 1,
+    FleetHQ: 1
 }
 
 
 def get_fresh_trade_deck():
-    return [c for _c in [[card] * number for card, number in standard_deck.items()] for c in _c]
+    return [c() for _c in [[card] * number for card, number in standard_deck.items()] for c in _c]

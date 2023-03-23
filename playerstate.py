@@ -33,7 +33,7 @@ class PlayerState(object):
         }
 
         self.zones = {
-            Zones.DECK: [Scout] * 8 + [Viper] * 2,
+            Zones.DECK: [Scout()] * 8 + [Viper()] * 2,
             Zones.HAND: [],
             Zones.IN_PLAY: [],
             Zones.DISCARD: []
@@ -80,11 +80,20 @@ class PlayerState(object):
     def end_turn(self):
         self[Values.DAMAGE] = 0
         self[Values.TRADE] = 0
+
+        ships = []
         for card in self[Zones.IN_PLAY]:
-            if card.card_type == CardTypes.SHIP:
-                move_list_item(card, self[Zones.IN_PLAY], self[Zones.DISCARD])
-        move_list_contents(self[Zones.IN_PLAY], self[Zones.DISCARD])
+            card.clear_abilities()
+            if card.is_ship():
+                ships.append(card)
+        for ship in ships:
+            move_list_item(ship, self[Zones.IN_PLAY], self[Zones.DISCARD])
+
         self.draw(5)
+
+    def destroy_base(self, base):
+        base.clear_abilities()
+        move_list_item(base, self[Zones.IN_PLAY], self[Zones.DISCARD])
 
     def count_explorers(self):
         return sum([zone.count(Explorer) for zone in self.zones.values()])

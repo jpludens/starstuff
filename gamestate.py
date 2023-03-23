@@ -3,7 +3,7 @@ from enums import Abilities, Actions, CardTypes, Values, Zones
 from random import shuffle
 from util import move_list_item
 from playerstate import Player, PlayerState
-from cards import Explorer
+from cards import Card, Explorer
 from decks import get_fresh_trade_deck
 
 
@@ -29,18 +29,24 @@ class GameState(object):
         self.inactive_player = self.bob
 
     def do_move(self, move):
-        # TODO: Accept ACTIVATE_BASE action
-        # TODO: Track activated vs unactivated bases
         if move.action == Actions.PLAY:
             logging.warning("{} is PLAYING: {}".format(move.actor.name, move.target.name))
             move_list_item(move.target,
                            move.actor[Zones.HAND],
                            move.actor[Zones.IN_PLAY])
+            move.target.initialize_abilities()
+            if move.target.card_type == CardTypes.SHIP:
+                self._apply_abilities(move)
+
+        elif move.action == Actions.ACTIVATE_BASE:
+            logging.warning("{} is ACTIVATING: {}".format(move.actor.name, move.target.name))
             self._apply_abilities(move)
+
         elif move.action == Actions.SCRAP:
             logging.warning("{} is SCRAPPING: {}".format(move.actor.name, move.target.name))
             move_list_item(move.target, move.actor[Zones.IN_PLAY], [])
             self._apply_abilities(move)
+
         elif move.action == Actions.BUY:
             logging.warning("{} is BUYING: {}".format(move.actor.name, move.target.name))
 
@@ -54,21 +60,38 @@ class GameState(object):
             else:
                 move_list_item(move.target, self.trade_row, move.actor[Zones.DISCARD])
                 self._fill_trade_row()
+
         elif move.action == Actions.ATTACK:
-            logging.warning("{} is ATTACKING {} for {} damage!".format(move.actor.name,
+            # Attack Base
+            if isinstance(move.target, Card):
+                logging.warning("{} is ATTACKING {} for {} damage!".format(move.actor.name,
+                                                                           move.target.name,
+                                                                           move.target.defense))
+                self.inactive_player.state.destroy_base(move.target)
+                logging.warning("{} has {} DAMAGE remaining".format(move.actor.name,
+                                                                    move.actor[Values.AUTHORITY]))
+
+            # Attack Opponent
+            else:
+                logging.warning("{} is ATTACKING {} for {} damage!".format(move.actor.name,
                                                                        move.target.name,
                                                                        move.actor[Values.DAMAGE]))
-            move.target[Values.AUTHORITY] -= move.actor[Values.DAMAGE]
-            move.actor[Values.DAMAGE] = 0
-            logging.warning("{} has {} AUTHORITY remaining".format(move.target.name,
+                move.target[Values.AUTHORITY] -= move.actor[Values.DAMAGE]
+                move.actor[Values.DAMAGE] = 0
+                logging.warning("{} has {} AUTHORITY remaining".format(move.target.name,
                                                                    move.target[Values.AUTHORITY]))
+
         elif move.action == Actions.END_TURN:
             logging.warning("{} is ENDING THEIR TURN".format(move.actor.name))
             self.active_player.state.end_turn()
             self.active_player, self.inactive_player = self.inactive_player, self.active_player
+            for base in self.active_player[Zones.IN_PLAY]:
+                base.initialize_abilities()
             self.turn_number += 1
 
     def _apply_abilities(self, move):
+        move.target.mark_ability_used(move.action)
+
         for key, value in move.target.abilities[move.action].items():
             if key in [Values.DAMAGE, Values.TRADE, Values.AUTHORITY]:
                 new_value = move.actor[key] + value

@@ -19,6 +19,10 @@ class Strategy(object):
         return [Move(gamestate.active_player, Actions.END_TURN)]
 
     @classmethod
+    def _get_activate_base_move(cls, gamestate, card):
+        return [Move(gamestate.active_player, Actions.ACTIVATE_BASE, card)]
+
+    @classmethod
     def _get_buy_most_expensive_card_move(cls, gamestate, faction=None):
         cards_by_cost = sorted(gamestate.trade_row, key=lambda c: c.cost)
         for card in cards_by_cost:
@@ -31,8 +35,8 @@ class Strategy(object):
     def _get_attack_all_outposts_moves(cls, gamestate):
         moves = []
         for card in gamestate.inactive_player[Zones.IN_PLAY]:
-            if card.data.CardType == CardTypes.OUTPOST:
-                moves += Move(gamestate.active_player, Actions.ATTACK, card)
+            if card.card_type == CardTypes.OUTPOST:
+                moves.append(Move(gamestate.active_player, Actions.ATTACK, card))
         return moves
 
     @classmethod
@@ -92,7 +96,9 @@ class FactionStrategy(Strategy):
             return self._get_play_all_cards_moves(gamestate)
 
         # If we have bases, activate them
-        # TODO!!!
+        for card in playerstate[Zones.IN_PLAY]:
+            if card.is_base() and Actions.ACTIVATE_BASE in card.available_abilities:
+                return self._get_activate_base_move(gamestate, card)
 
         # If we can afford a card, buy it, starting with the most expensive
         if playerstate[Values.TRADE] > 0:

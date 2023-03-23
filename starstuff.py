@@ -1,10 +1,3 @@
-# Goal: Implement bases
-    #/ data
-    #/ keep bases in play at end of turn
-    #/ account for bases in attacking
-    # supplement strategy to always scrap cards if it will get a win,
-    # activate abilities from bases that start turn in play
-    # (for testing, add a preference for bases)
 # Goal: Implement choices (tuples?)
 # Goal: Implement faction abilities
 #       need to track availabilityby individual card

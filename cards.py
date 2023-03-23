@@ -2,26 +2,37 @@ from enums import Abilities, Actions, CardTypes, Factions, Values
 
 
 class Card(object):
+    name = None
+    card_type = None
+    faction = None
+    cost = None
+    defense = None
+    abilities = None
+
     def __init__(self):
-        self.available_abilities = []
+        self.available_abilities = {}
 
-    def put_in_play(self):
-        # make abilities available
-        pass
+    def initialize_abilities(self):
+        self.available_abilities.update(self.abilities)
 
-    def trigger_ability(self, ability_type):
-        # remove triggered ability
-        pass
+    def mark_ability_used(self, ability_type):
+        del self.available_abilities[ability_type]
 
-    def remove_from_play(self):
-        # make abilities unavailable
-        pass
+    def clear_abilities(self):
+        self.available_abilities.clear()
+
+    def is_base(self):
+        return self.card_type != CardTypes.SHIP
+
+    def is_ship(self):
+        return self.card_type == CardTypes.SHIP
 
 
 # Boring Ships
 class Scout(Card):
-    name = "Scout"
     card_type = CardTypes.SHIP
+    name = "Scout"
+    cost = 0
     abilities = {
         Actions.PLAY: {
             Values.TRADE: 1

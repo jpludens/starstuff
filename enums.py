@@ -11,7 +11,6 @@ class Values(Enum):
     AUTHORITY = "AUTHORITY"
     TRADE = "TRADE"
     DAMAGE = "DAMAGE"
-    ABILITY = "ABILITY"  # TODO: Replace this over time with Ability values
 
 
 class Actions(Enum):
