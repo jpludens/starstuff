@@ -1,16 +1,28 @@
-from enums import Abilities, Actions, CardAttrs, Factions, Values
+from enums import Abilities, Actions, CardTypes, Factions, Values
 
 
 class Card(object):
-    data = {}
+    def __init__(self):
+        self.available_abilities = []
+
+    def put_in_play(self):
+        # make abilities available
+        pass
+
+    def trigger_ability(self, ability_type):
+        # remove triggered ability
+        pass
+
+    def remove_from_play(self):
+        # make abilities unavailable
+        pass
 
 
 # Boring Ships
 class Scout(Card):
-    data = {
-        CardAttrs.SHIP: True,
-        CardAttrs.NAME: "Scout",
-        CardAttrs.COST: 0,
+    name = "Scout"
+    card_type = CardTypes.SHIP
+    abilities = {
         Actions.PLAY: {
             Values.TRADE: 1
         }
@@ -18,10 +30,10 @@ class Scout(Card):
 
 
 class Viper(Card):
-    data = {
-        CardAttrs.SHIP: True,
-        CardAttrs.NAME: "Viper",
-        CardAttrs.COST: 0,
+    card_type = CardTypes.SHIP
+    name = "Viper"
+    cost = 0
+    abilities = {
         Actions.PLAY: {
             Values.DAMAGE: 1
         }
@@ -29,10 +41,10 @@ class Viper(Card):
 
 
 class Explorer(Card):
-    data = {
-        CardAttrs.SHIP: True,
-        CardAttrs.NAME: "Explorer",
-        CardAttrs.COST: 2,
+    card_type = CardTypes.SHIP
+    name = "Explorer"
+    cost = 2
+    abilities = {
         Actions.PLAY: {
             Values.TRADE: 2
         },
@@ -44,11 +56,11 @@ class Explorer(Card):
 
 # Blob Ships
 class BlobFighter(Card):
-    data = {
-        CardAttrs.SHIP: True,
-        CardAttrs.FACTION: Factions.BLOB,
-        CardAttrs.NAME: "Blob Fighter",
-        CardAttrs.COST: 1,
+    card_type = CardTypes.SHIP
+    faction = Factions.BLOB
+    name = "Blob Fighter"
+    cost = 1
+    abilities = {
         Actions.PLAY: {
             Values.DAMAGE: 3
         },
@@ -59,11 +71,11 @@ class BlobFighter(Card):
 
 
 class TradePod(Card):
-    data = {
-        CardAttrs.SHIP: True,
-        CardAttrs.FACTION: Factions.BLOB,
-        CardAttrs.NAME: "Trade Pod",
-        CardAttrs.COST: 2,
+    card_type = CardTypes.SHIP
+    faction = Factions.BLOB
+    name = "Trade Pod"
+    cost = 2
+    abilities = {
         Actions.PLAY: {
             Values.TRADE: 3
         },
@@ -74,11 +86,11 @@ class TradePod(Card):
 
 
 class BattlePod(Card):
-    data = {
-        CardAttrs.SHIP: True,
-        CardAttrs.FACTION: Factions.BLOB,
-        CardAttrs.NAME: "Battle Pod",
-        CardAttrs.COST: 2,
+    card_type = CardTypes.SHIP
+    faction = Factions.BLOB
+    name = "Battle Pod"
+    cost = 2
+    abilities = {
         Actions.PLAY: {
             Values.DAMAGE: 4
         },
@@ -89,11 +101,11 @@ class BattlePod(Card):
 
 
 class Ram(Card):
-    data = {
-        CardAttrs.SHIP: True,
-        CardAttrs.FACTION: Factions.BLOB,
-        CardAttrs.NAME: "Ram",
-        CardAttrs.COST: 3,
+    card_type = CardTypes.SHIP
+    faction = Factions.BLOB
+    name = "Ram"
+    cost = 3
+    abilities = {
         Actions.PLAY: {
             Values.DAMAGE: 5
         },
@@ -107,41 +119,41 @@ class Ram(Card):
 
 
 class BlobDestroyer(Card):
-    data = {
-        CardAttrs.SHIP: True,
-        CardAttrs.FACTION: Factions.BLOB,
-        CardAttrs.NAME: "Blob Destroyer",
-        CardAttrs.COST: 4,
+    card_type = CardTypes.SHIP
+    faction = Factions.BLOB
+    name = "Blob Destroyer"
+    cost = 4
+    abilities = {
         Actions.PLAY: {
             Values.DAMAGE: 6
         },
         Actions.ALLY: {
-            CardAttrs.ABILITY: "Blob Destroyer"
+            Abilities.UNIMPLEMENTED: "Blob Destroyer"
         }
     }
 
 
 class BlobCarrier(Card):
-    data = {
-        CardAttrs.SHIP: True,
-        CardAttrs.FACTION: Factions.BLOB,
-        CardAttrs.NAME: "Blob Carrier",
-        CardAttrs.COST: 6,
+    card_type = CardTypes.SHIP
+    faction = Factions.BLOB
+    name = "Blob Carrier"
+    cost = 6
+    abilities = {
         Actions.PLAY: {
             Values.DAMAGE: 7
         },
         Actions.ALLY: {
-            CardAttrs.ABILITY: "Blob Carrier"
+            Abilities.UNIMPLEMENTED: "Blob Carrier"
         }
     }
 
 
 class BattleBlob(Card):
-    data = {
-        CardAttrs.SHIP: True,
-        CardAttrs.FACTION: Factions.BLOB,
-        CardAttrs.NAME: "Battle Blob",
-        CardAttrs.COST: 6,
+    card_type = CardTypes.SHIP
+    faction = Factions.BLOB
+    name = "Battle Blob"
+    cost = 6
+    abilities = {
         Actions.PLAY: {
             Values.DAMAGE: 8
         },
@@ -155,11 +167,11 @@ class BattleBlob(Card):
 
 
 class Mothership(Card):
-    data = {
-        CardAttrs.SHIP: True,
-        CardAttrs.FACTION: Factions.BLOB,
-        CardAttrs.NAME: "Mothership",
-        CardAttrs.COST: 6,
+    card_type = CardTypes.SHIP
+    faction = Factions.BLOB
+    name = "Mothership"
+    cost = 6
+    abilities = {
         Actions.PLAY: {
             Values.DAMAGE: 6,
             Abilities.DRAW: 1
@@ -172,12 +184,12 @@ class Mothership(Card):
 
 # Blob Bases
 class BlobWheel(Card):
-    data = {
-        CardAttrs.BASE: True,
-        CardAttrs.FACTION: Factions.BLOB,
-        CardAttrs.NAME: "Blob Wheel",
-        CardAttrs.COST: 3,
-        CardAttrs.DEFENSE: 5,
+    card_type = CardTypes.BASE
+    faction = Factions.BLOB
+    name = "Blob Wheel"
+    cost = 3
+    defense = 5
+    abilities = {
         Actions.ACTIVATE_BASE: {
             Values.DAMAGE: 1,
         },
@@ -188,12 +200,12 @@ class BlobWheel(Card):
 
 
 class TheHive(Card):
-    data = {
-        CardAttrs.BASE: True,
-        CardAttrs.FACTION: Factions.BLOB,
-        CardAttrs.NAME: "The Hive",
-        CardAttrs.COST: 5,
-        CardAttrs.DEFENSE: 5,
+    card_type = CardTypes.BASE
+    faction = Factions.BLOB
+    name = "The Hive"
+    cost = 5
+    defense = 5
+    abilities = {
         Actions.ACTIVATE_BASE: {
             Values.DAMAGE: 3,
         },
@@ -204,25 +216,25 @@ class TheHive(Card):
 
 
 class BlobWorld(Card):
-    data = {
-        CardAttrs.BASE: True,
-        CardAttrs.FACTION: Factions.BLOB,
-        CardAttrs.NAME: "Blob World",
-        CardAttrs.COST: 8,
-        CardAttrs.DEFENSE: 8,
+    card_type = CardTypes.BASE
+    faction = Factions.BLOB
+    name = "Blob World"
+    cost = 8
+    defense = 8
+    abilities = {
         Actions.ACTIVATE_BASE: {
-            CardAttrs.ABILITY: "Blob World Choice"
+            Abilities.UNIMPLEMENTED: "Blob World Choice"
         }
     }
 
 
 # Federation Ships
 class FederationShuttle(Card):
-    data = {
-        CardAttrs.SHIP: True,
-        CardAttrs.FACTION: Factions.TRADE_FEDERATION,
-        CardAttrs.NAME: "Federation Shuttle",
-        CardAttrs.COST: 1,
+    card_type = CardTypes.SHIP
+    faction = Factions.TRADE_FEDERATION
+    name = "Federation Shuttle"
+    cost = 1
+    abilities = {
         Actions.PLAY: {
             Values.TRADE: 2,
         },
@@ -233,11 +245,11 @@ class FederationShuttle(Card):
 
 
 class Cutter(Card):
-    data = {
-        CardAttrs.SHIP: True,
-        CardAttrs.FACTION: Factions.TRADE_FEDERATION,
-        CardAttrs.NAME: "Cutter",
-        CardAttrs.COST: 2,
+    card_type = CardTypes.SHIP
+    faction = Factions.TRADE_FEDERATION
+    name = "Cutter"
+    cost = 2
+    abilities = {
         Actions.PLAY: {
             Values.AUTHORITY: 4,
             Values.TRADE: 2,
@@ -249,40 +261,40 @@ class Cutter(Card):
 
 
 class EmbassyYacht(Card):
-    data = {
-        CardAttrs.SHIP: True,
-        CardAttrs.FACTION: Factions.TRADE_FEDERATION,
-        CardAttrs.NAME: "Embassy Yacht",
-        CardAttrs.COST: 3,
+    card_type = CardTypes.SHIP
+    faction = Factions.TRADE_FEDERATION
+    name = "Embassy Yacht"
+    cost = 3
+    abilities = {
         Actions.PLAY: {
             Values.AUTHORITY: 3,
             Values.TRADE: 2,
-            CardAttrs.ABILITY: "Embassy Draw"
+            Abilities.UNIMPLEMENTED: "Embassy Draw"
         }
     }
 
 
 class Freighter(Card):
-    data = {
-        CardAttrs.SHIP: True,
-        CardAttrs.FACTION: Factions.TRADE_FEDERATION,
-        CardAttrs.NAME: "Freighter",
-        CardAttrs.COST: 4,
+    card_type = CardTypes.SHIP
+    faction = Factions.TRADE_FEDERATION
+    name = "Freighter"
+    cost = 4
+    abilities = {
         Actions.PLAY: {
             Values.TRADE: 4,
         },
         Actions.ALLY: {
-            CardAttrs.ABILITY: "Shop To Top"
+            Abilities.UNIMPLEMENTED: "Shop To Top"
         }
     }
 
 
 class TradeEscort(Card):
-    data = {
-        CardAttrs.SHIP: True,
-        CardAttrs.FACTION: Factions.TRADE_FEDERATION,
-        CardAttrs.NAME: "Trade Escort",
-        CardAttrs.COST: 5,
+    card_type = CardTypes.SHIP
+    faction = Factions.TRADE_FEDERATION
+    name = "Trade Escort"
+    cost = 5
+    abilities = {
         Actions.PLAY: {
             Values.AUTHORITY: 4,
             Values.DAMAGE: 4,
@@ -294,11 +306,11 @@ class TradeEscort(Card):
 
 
 class Flagship(Card):
-    data = {
-        CardAttrs.SHIP: True,
-        CardAttrs.FACTION: Factions.TRADE_FEDERATION,
-        CardAttrs.NAME: "Flagship",
-        CardAttrs.COST: 6,
+    card_type = CardTypes.SHIP
+    faction = Factions.TRADE_FEDERATION
+    name = "Flagship"
+    cost = 6
+    abilities = {
         Actions.PLAY: {
             Values.DAMAGE: 5,
             Abilities.DRAW: 1
@@ -310,33 +322,32 @@ class Flagship(Card):
 
 
 class CommandShip(Card):
-    data = {
-        CardAttrs.SHIP: True,
-        CardAttrs.FACTION: Factions.TRADE_FEDERATION,
-        CardAttrs.NAME: "Command Ship",
-        CardAttrs.COST: 8,
+    card_type = CardTypes.SHIP
+    faction = Factions.TRADE_FEDERATION
+    name = "Command Ship"
+    cost = 8
+    abilities = {
         Actions.PLAY: {
             Values.AUTHORITY: 4,
             Values.DAMAGE: 5,
             Abilities.DRAW: 2
         },
         Actions.ALLY: {
-            CardAttrs.ABILITY: "Blow Base"
+            Abilities.UNIMPLEMENTED: "Blow Base"
         }
     }
 
 
 # Trade Federation Bases
 class TradingPost(Card):
-    data = {
-        CardAttrs.BASE: True,
-        CardAttrs.OUTPOST: True,
-        CardAttrs.FACTION: Factions.TRADE_FEDERATION,
-        CardAttrs.NAME: "Trading Post",
-        CardAttrs.COST: 3,
-        CardAttrs.DEFENSE: 4,
+    card_type = CardTypes.OUTPOST
+    faction = Factions.TRADE_FEDERATION
+    name = "Trading Post"
+    cost = 3
+    defense = 4
+    abilities = {
         Actions.ACTIVATE_BASE: {
-            CardAttrs.ABILITY: "1 Authority or Trade"
+            Abilities.UNIMPLEMENTED: "1 Authority or Trade"
         },
         Actions.SCRAP: {
             Values.DAMAGE: 3
@@ -345,14 +356,14 @@ class TradingPost(Card):
 
 
 class BarterWorld(Card):
-    data = {
-        CardAttrs.BASE: True,
-        CardAttrs.FACTION: Factions.TRADE_FEDERATION,
-        CardAttrs.NAME: "Barter World",
-        CardAttrs.COST: 4,
-        CardAttrs.DEFENSE: 4,
+    card_type = CardTypes.BASE
+    faction = Factions.TRADE_FEDERATION
+    name = "Barter World"
+    cost = 4
+    defense = 4
+    abilities = {
         Actions.ACTIVATE_BASE: {
-            CardAttrs.ABILITY: "2 Authority or Trade"
+            Abilities.UNIMPLEMENTED: "2 Authority or Trade"
         },
         Actions.SCRAP: {
             Values.DAMAGE: 5
@@ -361,15 +372,14 @@ class BarterWorld(Card):
 
 
 class DefenseCenter(Card):
-    data = {
-        CardAttrs.BASE: True,
-        CardAttrs.OUTPOST: True,
-        CardAttrs.FACTION: Factions.TRADE_FEDERATION,
-        CardAttrs.NAME: "Defense Center",
-        CardAttrs.COST: 5,
-        CardAttrs.DEFENSE: 5,
+    card_type = CardTypes.OUTPOST
+    faction = Factions.TRADE_FEDERATION
+    name = "Defense Center"
+    cost = 5
+    defense = 5
+    abilities = {
         Actions.ACTIVATE_BASE: {
-            CardAttrs.ABILITY: "3 Authority or 2 Damage"
+            Abilities.UNIMPLEMENTED: "3 Authority or 2 Damage"
         },
         Actions.ALLY: {
             Values.DAMAGE: 2
@@ -378,33 +388,32 @@ class DefenseCenter(Card):
 
 
 class PortOfCall(Card):
-    data = {
-        CardAttrs.BASE: True,
-        CardAttrs.OUTPOST: True,
-        CardAttrs.FACTION: Factions.TRADE_FEDERATION,
-        CardAttrs.NAME: "Port Of Call",
-        CardAttrs.COST: 6,
-        CardAttrs.DEFENSE: 6,
+    card_type = CardTypes.OUTPOST
+    faction = Factions.TRADE_FEDERATION
+    name = "Port Of Call"
+    cost = 6
+    defense = 6
+    abilities = {
         Actions.ACTIVATE_BASE: {
             Values.TRADE: 3
         },
         Actions.SCRAP: {
             Abilities.DRAW: 1,
-            CardAttrs.ABILITY: "Blow Base"
+            Abilities.UNIMPLEMENTED: "Blow Base"
         }
     }
 
 
 class CentralOffice(Card):
-    data = {
-        CardAttrs.BASE: True,
-        CardAttrs.FACTION: Factions.TRADE_FEDERATION,
-        CardAttrs.NAME: "Central Office",
-        CardAttrs.COST: 7,
-        CardAttrs.DEFENSE: 6,
+    card_type = CardTypes.BASE
+    faction = Factions.TRADE_FEDERATION
+    name = "Central Office"
+    cost = 7
+    defense = 6
+    abilities = {
         Actions.ACTIVATE_BASE: {
             Values.TRADE: 2,
-            CardAttrs.ABILITY: "Freighter"
+            Abilities.UNIMPLEMENTED: "Freighter"
         },
         Actions.ALLY: {
             Abilities.DRAW: 1
@@ -414,14 +423,14 @@ class CentralOffice(Card):
 
 # Machine Cult Ships
 class TradeBot(Card):
-    data = {
-        CardAttrs.SHIP: True,
-        CardAttrs.FACTION: Factions.MACHINE_CULT,
-        CardAttrs.NAME: "Trade Bot",
-        CardAttrs.COST: 1,
+    card_type = CardTypes.SHIP
+    faction = Factions.MACHINE_CULT
+    name = "Trade Bot"
+    cost = 1
+    abilities = {
         Actions.PLAY: {
             Values.TRADE: 1,
-            CardAttrs.ABILITY: Actions.SCRAP
+            Abilities.UNIMPLEMENTED: Actions.SCRAP
         },
         Actions.ALLY: {
             Values.DAMAGE: 2,
@@ -430,14 +439,14 @@ class TradeBot(Card):
 
 
 class MissileBot(Card):
-    data = {
-        CardAttrs.SHIP: True,
-        CardAttrs.FACTION: Factions.MACHINE_CULT,
-        CardAttrs.NAME: "Missile Bot",
-        CardAttrs.COST: 2,
+    card_type = CardTypes.SHIP
+    faction = Factions.MACHINE_CULT
+    name = "Missile Bot"
+    cost = 2
+    abilities = {
         Actions.PLAY: {
             Values.DAMAGE: 2,
-            CardAttrs.ABILITY: Actions.SCRAP
+            Abilities.UNIMPLEMENTED: Actions.SCRAP
         },
         Actions.ALLY: {
             Values.DAMAGE: 2,
@@ -446,14 +455,14 @@ class MissileBot(Card):
 
 
 class SupplyBot(Card):
-    data = {
-        CardAttrs.SHIP: True,
-        CardAttrs.FACTION: Factions.MACHINE_CULT,
-        CardAttrs.NAME: "Supply Bot",
-        CardAttrs.COST: 3,
+    card_type = CardTypes.SHIP
+    faction = Factions.MACHINE_CULT
+    name = "Supply Bot"
+    cost = 3
+    abilities = {
         Actions.PLAY: {
             Values.TRADE: 2,
-            CardAttrs.ABILITY: Actions.SCRAP
+            Abilities.UNIMPLEMENTED: Actions.SCRAP
         },
         Actions.ALLY: {
             Values.DAMAGE: 2,
@@ -462,41 +471,41 @@ class SupplyBot(Card):
 
 
 class PatrolMech(Card):
-    data = {
-        CardAttrs.SHIP: True,
-        CardAttrs.FACTION: Factions.MACHINE_CULT,
-        CardAttrs.NAME: "Patrol Mech",
-        CardAttrs.COST: 4,
+    card_type = CardTypes.SHIP
+    faction = Factions.MACHINE_CULT
+    name = "Patrol Mech"
+    cost = 4
+    abilities = {
         Actions.PLAY: {
-            CardAttrs.ABILITY: "Patrol Mech Choice"
+            Abilities.UNIMPLEMENTED: "Patrol Mech Choice"
         },
         Actions.ALLY: {
-            CardAttrs.ABILITY: Actions.SCRAP
+            Abilities.UNIMPLEMENTED: Actions.SCRAP
         }
     }
 
 
 class StealthNeedle(Card):
-    data = {
-        CardAttrs.SHIP: True,
-        CardAttrs.FACTION: Factions.MACHINE_CULT,
-        CardAttrs.NAME: "Stealth Needle",
-        CardAttrs.COST: 4,
+    card_type = CardTypes.SHIP
+    faction = Factions.MACHINE_CULT
+    name = "Stealth Needle"
+    cost = 4
+    abilities = {
         Actions.PLAY: {
-            CardAttrs.ABILITY: "Stealth Needle"
+            Abilities.UNIMPLEMENTED: "Stealth Needle"
         }
     }
 
 
 class BattleMech(Card):
-    data = {
-        CardAttrs.SHIP: True,
-        CardAttrs.FACTION: Factions.MACHINE_CULT,
-        CardAttrs.NAME: "Battle Mech",
-        CardAttrs.COST: 5,
+    card_type = CardTypes.SHIP
+    faction = Factions.MACHINE_CULT
+    name = "Battle Mech"
+    cost = 5
+    abilities = {
         Actions.PLAY: {
             Values.DAMAGE: 4,
-            CardAttrs.ABILITY: Actions.SCRAP
+            Abilities.UNIMPLEMENTED: Actions.SCRAP
         },
         Actions.ALLY: {
             Abilities.DRAW: 1
@@ -505,14 +514,14 @@ class BattleMech(Card):
 
 
 class MissileMech(Card):
-    data = {
-        CardAttrs.SHIP: True,
-        CardAttrs.FACTION: Factions.MACHINE_CULT,
-        CardAttrs.NAME: "Missile Mech",
-        CardAttrs.COST: 6,
+    card_type = CardTypes.SHIP
+    faction = Factions.MACHINE_CULT
+    name = "Missile Mech"
+    cost = 6
+    abilities = {
         Actions.PLAY: {
             Values.DAMAGE: 6,
-            CardAttrs.ABILITY: "Blow Base"
+            Abilities.UNIMPLEMENTED: "Blow Base"
         },
         Actions.ALLY: {
             Values.AUTHORITY: 0,
@@ -525,13 +534,12 @@ class MissileMech(Card):
 
 # Machine Cult Bases
 class BattleStation(Card):
-    data = {
-        CardAttrs.BASE: True,
-        CardAttrs.OUTPOST: True,
-        CardAttrs.FACTION: Factions.MACHINE_CULT,
-        CardAttrs.NAME: "Battle Station",
-        CardAttrs.COST: 3,
-        CardAttrs.DEFENSE: 5,
+    card_type = CardTypes.OUTPOST
+    faction = Factions.MACHINE_CULT
+    name = "Battle Station"
+    cost = 3
+    defense = 5
+    abilities = {
         Actions.SCRAP: {
             Values.DAMAGE: 5,
         }
@@ -539,71 +547,67 @@ class BattleStation(Card):
 
 
 class MechWorld(Card):
-    data = {
-        CardAttrs.BASE: True,
-        CardAttrs.OUTPOST: True,
-        CardAttrs.FACTION: Factions.MACHINE_CULT,
-        CardAttrs.NAME: "Mech World",
-        CardAttrs.COST: 5,
-        CardAttrs.DEFENSE: 6,
+    card_type = CardTypes.OUTPOST
+    faction = Factions.MACHINE_CULT
+    name = "Mech World"
+    cost = 5
+    defense = 6
+    abilities = {
         Actions.ACTIVATE_BASE: {
-            CardAttrs.ABILITY: "Mech World"
+            Abilities.UNIMPLEMENTED: "Mech World"
         }
     }
 
 
 class Junkyard(Card):
-    data = {
-        CardAttrs.BASE: True,
-        CardAttrs.OUTPOST: True,
-        CardAttrs.FACTION: Factions.MACHINE_CULT,
-        CardAttrs.NAME: "Junkyard",
-        CardAttrs.COST: 6,
-        CardAttrs.DEFENSE: 5,
+    card_type = CardTypes.OUTPOST
+    faction = Factions.MACHINE_CULT
+    name = "Junkyard"
+    cost = 6
+    defense = 5
+    abilities = {
         Actions.ACTIVATE_BASE: {
-            CardAttrs.ABILITY: Actions.SCRAP
+            Abilities.UNIMPLEMENTED: Actions.SCRAP
         }
     }
 
 
 class MachineBase(Card):
-    data = {
-        CardAttrs.BASE: True,
-        CardAttrs.OUTPOST: True,
-        CardAttrs.FACTION: Factions.MACHINE_CULT,
-        CardAttrs.NAME: "MachineBase",
-        CardAttrs.COST: 7,
-        CardAttrs.DEFENSE: 6,
+    card_type = CardTypes.OUTPOST
+    faction = Factions.MACHINE_CULT
+    name = "MachineBase"
+    cost = 7
+    defense = 6
+    abilities = {
         Actions.ACTIVATE_BASE: {
-            CardAttrs.ABILITY: "Machine Base"
+            Abilities.UNIMPLEMENTED: "Machine Base"
         }
     }
 
 
 class BrainWorld(Card):
-    data = {
-        CardAttrs.BASE: True,
-        CardAttrs.OUTPOST: True,
-        CardAttrs.FACTION: Factions.MACHINE_CULT,
-        CardAttrs.NAME: "Brain World",
-        CardAttrs.COST: 8,
-        CardAttrs.DEFENSE: 6,
+    card_type = CardTypes.OUTPOST
+    faction = Factions.MACHINE_CULT
+    name = "Brain World"
+    cost = 8
+    defense = 6
+    abilities = {
         Actions.ACTIVATE_BASE: {
-            CardAttrs.ABILITY: "Brain World"
+            Abilities.UNIMPLEMENTED: "Brain World"
         }
     }
 
 
 # Star Empire Ships
 class ImperialFighter(Card):
-    data = {
-        CardAttrs.SHIP: True,
-        CardAttrs.FACTION: Factions.STAR_EMPIRE,
-        CardAttrs.NAME: "Imperial Fighter",
-        CardAttrs.COST: 1,
+    card_type = CardTypes.SHIP
+    faction = Factions.STAR_EMPIRE
+    name = "Imperial Fighter"
+    cost = 1
+    abilities = {
         Actions.PLAY: {
             Values.DAMAGE: 2,
-            CardAttrs.ABILITY: "Discard"
+            Abilities.UNIMPLEMENTED: "Discard"
         },
         Actions.ALLY: {
             Values.DAMAGE: 2,
@@ -612,11 +616,11 @@ class ImperialFighter(Card):
 
 
 class Corvette(Card):
-    data = {
-        CardAttrs.SHIP: True,
-        CardAttrs.FACTION: Factions.STAR_EMPIRE,
-        CardAttrs.NAME: "Corvette",
-        CardAttrs.COST: 2,
+    card_type = CardTypes.SHIP
+    faction = Factions.STAR_EMPIRE
+    name = "Corvette"
+    cost = 2
+    abilities = {
         Actions.PLAY: {
             Values.DAMAGE: 1,
             Abilities.DRAW: 1
@@ -628,30 +632,30 @@ class Corvette(Card):
 
 
 class SurveyShip(Card):
-    data = {
-        CardAttrs.SHIP: True,
-        CardAttrs.FACTION: Factions.STAR_EMPIRE,
-        CardAttrs.NAME: "Survey Ship",
-        CardAttrs.COST: 3,
+    card_type = CardTypes.SHIP
+    faction = Factions.STAR_EMPIRE
+    name = "Survey Ship"
+    cost = 3
+    abilities = {
         Actions.PLAY: {
             Values.TRADE: 3,
             Abilities.DRAW: 1
         },
         Actions.SCRAP: {
-            CardAttrs.ABILITY: "Discard"
+            Abilities.UNIMPLEMENTED: "Discard"
         }
     }
 
 
 class ImperialFrigate(Card):
-    data = {
-        CardAttrs.SHIP: True,
-        CardAttrs.FACTION: Factions.STAR_EMPIRE,
-        CardAttrs.NAME: "Imperial Frigate",
-        CardAttrs.COST: 3,
+    card_type = CardTypes.SHIP
+    faction = Factions.STAR_EMPIRE
+    name = "Imperial Frigate"
+    cost = 3
+    abilities = {
         Actions.PLAY: {
             Values.DAMAGE: 4,
-            CardAttrs.ABILITY: "Discard"
+            Abilities.UNIMPLEMENTED: "Discard"
         },
         Actions.ALLY: {
             Values.DAMAGE: 2,
@@ -664,30 +668,30 @@ class ImperialFrigate(Card):
 
 
 class BattleCruiser(Card):
-    data = {
-        CardAttrs.SHIP: True,
-        CardAttrs.FACTION: Factions.STAR_EMPIRE,
-        CardAttrs.NAME: "BattleCruiser",
-        CardAttrs.COST: 6,
+    card_type = CardTypes.SHIP
+    faction = Factions.STAR_EMPIRE
+    name = "BattleCruiser"
+    cost = 6
+    abilities = {
         Actions.PLAY: {
             Values.DAMAGE: 6,
             Abilities.DRAW: 1
         },
         Actions.ALLY: {
-            CardAttrs.ABILITY: "Discard"
+            Abilities.UNIMPLEMENTED: "Discard"
         },
         Actions.SCRAP: {
-            CardAttrs.ABILITY: "Draw AND Blow Base",
+            Abilities.UNIMPLEMENTED: "Draw AND Blow Base",
         }
     }
 
 
 class Dreadnought(Card):
-    data = {
-        CardAttrs.SHIP: True,
-        CardAttrs.FACTION: Factions.STAR_EMPIRE,
-        CardAttrs.NAME: "Dreadnought",
-        CardAttrs.COST: 7,
+    card_type = CardTypes.SHIP
+    faction = Factions.STAR_EMPIRE
+    name = "Dreadnought"
+    cost = 7
+    abilities = {
         Actions.PLAY: {
             Values.DAMAGE: 7,
             Abilities.DRAW: 1
@@ -700,27 +704,25 @@ class Dreadnought(Card):
 
 # Star Empire Bases
 class RecyclingStation(Card):
-    data = {
-        CardAttrs.BASE: True,
-        CardAttrs.OUTPOST: True,
-        CardAttrs.FACTION: Factions.STAR_EMPIRE,
-        CardAttrs.NAME: "Recycling Station",
-        CardAttrs.COST: 4,
-        CardAttrs.DEFENSE: 4,
+    card_type = CardTypes.OUTPOST
+    faction = Factions.STAR_EMPIRE
+    name = "Recycling Station"
+    cost = 4
+    defense = 4
+    abilities = {
         Actions.ACTIVATE_BASE: {
-            CardAttrs.ABILITY: "Recycling Station"
+            Abilities.UNIMPLEMENTED: "Recycling Station"
         }
     }
 
 
 class SpaceStation(Card):
-    data = {
-        CardAttrs.BASE: True,
-        CardAttrs.OUTPOST: True,
-        CardAttrs.FACTION: Factions.STAR_EMPIRE,
-        CardAttrs.NAME: "Space Station",
-        CardAttrs.COST: 4,
-        CardAttrs.DEFENSE: 4,
+    card_type = CardTypes.OUTPOST
+    faction = Factions.STAR_EMPIRE
+    name = "Space Station"
+    cost = 4
+    defense = 4
+    abilities = {
         Actions.ACTIVATE_BASE: {
             Values.DAMAGE: 2
         },
@@ -734,13 +736,12 @@ class SpaceStation(Card):
 
 
 class WarWorld(Card):
-    data = {
-        CardAttrs.BASE: True,
-        CardAttrs.OUTPOST: True,
-        CardAttrs.FACTION: Factions.STAR_EMPIRE,
-        CardAttrs.NAME: "War World",
-        CardAttrs.COST: 5,
-        CardAttrs.DEFENSE: 4,
+    card_type = CardTypes.OUTPOST
+    faction = Factions.STAR_EMPIRE
+    name = "War World"
+    cost = 5
+    defense = 4
+    abilities = {
         Actions.ACTIVATE_BASE: {
             Values.DAMAGE: 3
         },
@@ -751,30 +752,29 @@ class WarWorld(Card):
 
 
 class RoyalRedoubt(Card):
-    data = {
-        CardAttrs.BASE: True,
-        CardAttrs.OUTPOST: True,
-        CardAttrs.FACTION: Factions.STAR_EMPIRE,
-        CardAttrs.NAME: "Royal Redoubt",
-        CardAttrs.COST: 6,
-        CardAttrs.DEFENSE: 6,
+    card_type = CardTypes.OUTPOST
+    faction = Factions.STAR_EMPIRE
+    name = "Royal Redoubt"
+    cost = 6
+    defense = 6
+    abilities = {
         Actions.ACTIVATE_BASE: {
             Values.DAMAGE: 3
         },
         Actions.ALLY: {
-            CardAttrs.ABILITY: "Discard"
+            Abilities.UNIMPLEMENTED: "Discard"
         }
     }
 
 
 class FleetHQ(Card):
-    data = {
-        CardAttrs.BASE: True,
-        CardAttrs.FACTION: Factions.STAR_EMPIRE,
-        CardAttrs.NAME: "FleetHQ",
-        CardAttrs.COST: 8,
-        CardAttrs.DEFENSE: 8,
+    card_type = CardTypes.BASE
+    faction = Factions.STAR_EMPIRE
+    name = "FleetHQ"
+    cost = 8
+    defense = 8
+    abilities = {
         Actions.ACTIVATE_BASE: {
-            CardAttrs.ABILITY: "Fleet HQ"
+            Abilities.UNIMPLEMENTED: "Fleet HQ"
         }
     }

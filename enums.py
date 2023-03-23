@@ -1,15 +1,10 @@
 from enum import Enum
 
 
-class CardAttrs(Enum):
-    FACTION = "FACTION"
-    NAME = "NAME"
-    COST = "COST"
-    ABILITY = "ABILITY"
+class CardTypes(Enum):
     SHIP = "SHIP"
     BASE = "BASE"
     OUTPOST = "OUTPOST"
-    DEFENSE = "DEFENSE"
 
 
 class Values(Enum):
@@ -47,3 +42,4 @@ class Factions(Enum):
 
 class Abilities(Enum):
     DRAW = "DRAW"
+    UNIMPLEMENTED = "UNIMPLEMENTED"

@@ -2,7 +2,7 @@ from random import shuffle
 
 from cards import Scout, Viper, Explorer
 from util import move_list_contents, move_list_item
-from enums import CardAttrs, Values, Zones
+from enums import CardTypes, Values, Zones
 
 
 class Player(object):
@@ -81,7 +81,7 @@ class PlayerState(object):
         self[Values.DAMAGE] = 0
         self[Values.TRADE] = 0
         for card in self[Zones.IN_PLAY]:
-            if card.data[CardAttrs.SHIP]:
+            if card.card_type == CardTypes.SHIP:
                 move_list_item(card, self[Zones.IN_PLAY], self[Zones.DISCARD])
         move_list_contents(self[Zones.IN_PLAY], self[Zones.DISCARD])
         self.draw(5)

@@ -1,9 +1,9 @@
 import logging
-from enums import Abilities, Actions, CardAttrs, Values, Zones
+from enums import Abilities, Actions, CardTypes, Values, Zones
 from random import shuffle
 from util import move_list_item
 from playerstate import Player, PlayerState
-from cards import Explorer, PlayedCard
+from cards import Explorer
 from decks import get_fresh_trade_deck
 
 
@@ -32,21 +32,21 @@ class GameState(object):
         # TODO: Accept ACTIVATE_BASE action
         # TODO: Track activated vs unactivated bases
         if move.action == Actions.PLAY:
-            logging.warning("{} is PLAYING: {}".format(move.actor.name, move.target.data[CardAttrs.NAME]))
+            logging.warning("{} is PLAYING: {}".format(move.actor.name, move.target.name))
             move_list_item(move.target,
                            move.actor[Zones.HAND],
                            move.actor[Zones.IN_PLAY])
             self._apply_abilities(move)
         elif move.action == Actions.SCRAP:
-            logging.warning("{} is SCRAPPING: {}".format(move.actor.name, move.target.data[CardAttrs.NAME]))
+            logging.warning("{} is SCRAPPING: {}".format(move.actor.name, move.target.name))
             move_list_item(move.target, move.actor[Zones.IN_PLAY], [])
             self._apply_abilities(move)
         elif move.action == Actions.BUY:
-            logging.warning("{} is BUYING: {}".format(move.actor.name, move.target.data[CardAttrs.NAME]))
+            logging.warning("{} is BUYING: {}".format(move.actor.name, move.target.name))
 
-            move.actor[Values.TRADE] -= move.target.data[CardAttrs.COST]
+            move.actor[Values.TRADE] -= move.target.cost
             logging.warning("{} spent {} TRADE and has {} remaining".format(move.actor.name,
-                                                                            move.target.data[CardAttrs.COST],
+                                                                            move.target.cost,
                                                                             move.actor[Values.TRADE]))
 
             if move.target == Explorer:
@@ -69,7 +69,7 @@ class GameState(object):
             self.turn_number += 1
 
     def _apply_abilities(self, move):
-        for key, value in move.target.data[move.action].items():
+        for key, value in move.target.abilities[move.action].items():
             if key in [Values.DAMAGE, Values.TRADE, Values.AUTHORITY]:
                 new_value = move.actor[key] + value
                 logging.warning("Adding {} to {}'s {} for a total of {}".format(value,
@@ -90,6 +90,6 @@ class GameState(object):
         empty_slots = 5 - cards_in_row
         new_cards = self.trade_deck[:empty_slots]
         for new_card in new_cards:
-            logging.warning("Trade Row: {} added".format(new_card.data[CardAttrs.NAME]))
+            logging.warning("Trade Row: {} added".format(new_card.name))
             self.trade_row.append(new_card)
         self.trade_deck[:empty_slots] = []
