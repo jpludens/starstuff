@@ -100,22 +100,30 @@ class GameState(object):
 
     def _apply_abilities(self, move):
         move.target.use_ability(move.action)
-
         for key, value in move.target.abilities[move.action].items():
-            if key in [Values.DAMAGE, Values.TRADE, Values.AUTHORITY]:
-                new_value = move.actor[key] + value
-                logging.warning("Adding {} to {}'s {} for a total of {}".format(value,
-                                                                                move.actor.name,
-                                                                                key.name,
-                                                                                new_value))
-                self.active_player[key] = new_value
+            self._apply_effect(move, key, value)
 
-            elif key == Abilities.DRAW:
-                move.actor.state.draw(1)
-                logging.warning("{} DRAWS a card".format(move.actor.name))
+    def _apply_effect(self, move, key, value):
+        if key in [Values.DAMAGE, Values.TRADE, Values.AUTHORITY]:
+            new_value = move.actor[key] + value
+            logging.warning("Adding {} to {}'s {} for a total of {}".format(value,
+                                                                            move.actor.name,
+                                                                            key.name,
+                                                                            new_value))
+            self.active_player[key] = new_value
 
-            else:
-                logging.warning("Ignoring ability - {}: {}".format(key, value))
+        elif key == Abilities.DRAW:
+            move.actor.state.draw(1)
+            logging.warning("{} DRAWS a card".format(move.actor.name))
+
+        elif key == Abilities.CHOICE:
+            chosen_key = move.choice
+            chosen_value = value[move.choice]
+            logging.warning("{} CHOOSES {} {}".format(move.actor.name, chosen_value, chosen_key.name))
+            self._apply_effect(move, chosen_key, chosen_value)
+
+        else:
+            logging.warning("Ignoring ability - {}: {}".format(key, value))
 
     def _fill_trade_row(self):
         cards_in_row = len(self.trade_row)

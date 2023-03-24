@@ -1,6 +1,18 @@
-# Goal: Implement choices (tuples?)
-#       need to track availabilityby individual card
 # Goal: Implement remaining abilities
+#    Mech World
+#    Destroy Base
+#    Blob Carrier
+#    Freighter / Central Office
+#    Embassy Yacht
+#    Scrap Trade
+#    Scrap / Junkyard
+#      Machine Base
+#      Brain World
+#    Blob World
+#    Discard
+#    Stealth Needle
+#    Fleet HQ
+#    Recycling Station
 
 # Goal: Use a Strategy class to trigger deterministic abilities
 # Goal: use a Strategy class to mimic app

@@ -107,7 +107,8 @@ class BattlePod(Card):
     cost = 2
     abilities = {
         Actions.PLAY: {
-            Values.DAMAGE: 4
+            Values.DAMAGE: 4,
+            Abilities.UNIMPLEMENTED: "Scrap Trade"
         },
         Actions.ALLY: {
             Values.DAMAGE: 2
@@ -143,7 +144,7 @@ class BlobDestroyer(Card):
             Values.DAMAGE: 6
         },
         Actions.ALLY: {
-            Abilities.UNIMPLEMENTED: "Blob Destroyer"
+            Abilities.UNIMPLEMENTED: "Blow Base and/or Scrap Trade"
         }
     }
 
@@ -362,7 +363,10 @@ class TradingPost(Card):
     defense = 4
     abilities = {
         Actions.ACTIVATE_BASE: {
-            Abilities.UNIMPLEMENTED: "1 Authority or Trade"
+            Abilities.CHOICE: {
+                Values.AUTHORITY: 1,
+                Values.TRADE: 1
+            }
         },
         Actions.SCRAP: {
             Values.DAMAGE: 3
@@ -378,7 +382,10 @@ class BarterWorld(Card):
     defense = 4
     abilities = {
         Actions.ACTIVATE_BASE: {
-            Abilities.UNIMPLEMENTED: "2 Authority or Trade"
+            Abilities.CHOICE: {
+                Values.AUTHORITY: 2,
+                Values.TRADE: 2
+            }
         },
         Actions.SCRAP: {
             Values.DAMAGE: 5
@@ -394,7 +401,10 @@ class DefenseCenter(Card):
     defense = 5
     abilities = {
         Actions.ACTIVATE_BASE: {
-            Abilities.UNIMPLEMENTED: "3 Authority or 2 Damage"
+            Abilities.CHOICE: {
+                Values.AUTHORITY: 3,
+                Values.DAMAGE: 2
+            }
         },
         Actions.ALLY: {
             Values.DAMAGE: 2
@@ -492,7 +502,10 @@ class PatrolMech(Card):
     cost = 4
     abilities = {
         Actions.PLAY: {
-            Abilities.UNIMPLEMENTED: "Patrol Mech Choice"
+            Abilities.CHOICE: {
+                Values.TRADE: 3,
+                Values.DAMAGE: 5
+            }
         },
         Actions.ALLY: {
             Abilities.UNIMPLEMENTED: Actions.SCRAP

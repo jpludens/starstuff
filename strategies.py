@@ -1,12 +1,20 @@
+from random import choice
 from cards import Explorer
-from enums import Actions, CardTypes, Values, Zones, Factions
+from enums import Actions, CardTypes, Values, Zones, Factions, Abilities
 from move import Move
 
 
 class Strategy(object):
     @classmethod
     def _get_play_all_cards_moves(cls, gamestate):
-        return [Move(gamestate.active_player, Actions.PLAY, card) for card in gamestate.active_player.state[Zones.HAND]]
+        moves = []
+        for card in gamestate.active_player.state[Zones.HAND]:
+            card_choice = None
+            card_choices = card.abilities.get(Actions.PLAY, {}).get(Abilities.CHOICE)
+            if card_choices:
+                card_choice = choice(list(card_choices.keys()))
+            moves.append(Move(gamestate.active_player, Actions.PLAY, card, choice=card_choice))
+        return moves
 
     @classmethod
     def _get_attack_move(cls, gamestate, target_base=None):
@@ -20,7 +28,11 @@ class Strategy(object):
 
     @classmethod
     def _get_activate_base_move(cls, gamestate, card):
-        return [Move(gamestate.active_player, Actions.ACTIVATE_BASE, card)]
+        card_choice = None
+        card_choices = card.abilities[Actions.ACTIVATE_BASE].get(Abilities.CHOICE)
+        if card_choices:
+            card_choice = choice(list(card_choices.keys()))
+        return [Move(gamestate.active_player, Actions.ACTIVATE_BASE, card, choice=card_choice)]
 
     @classmethod
     def _get_buy_most_expensive_card_move(cls, gamestate, faction=None):

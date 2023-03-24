@@ -41,4 +41,5 @@ class Factions(Enum):
 
 class Abilities(Enum):
     DRAW = "DRAW"
+    CHOICE = "CHOICE"
     UNIMPLEMENTED = "UNIMPLEMENTED"
