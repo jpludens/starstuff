@@ -64,6 +64,14 @@ class Strategy(object):
                 scrap_moves.append(Move(gamestate.active_player, Actions.SCRAP, card))
         return scrap_moves
 
+    @classmethod
+    def _get_activate_all_ally_abilities(cls, gamestate):
+        moves = []
+        for card in gamestate.active_player[Zones.IN_PLAY]:
+            if Actions.ALLY in card.available_abilities and gamestate.active_factions[card.faction] > 1:
+                moves.append(Move(gamestate.active_player, Actions.ALLY, card))
+        return moves
+
 
 # class BasicStrategy(Strategy):
 #     def get_moves(self, gamestate):
@@ -99,6 +107,11 @@ class FactionStrategy(Strategy):
         for card in playerstate[Zones.IN_PLAY]:
             if card.is_base() and Actions.ACTIVATE_BASE in card.available_abilities:
                 return self._get_activate_base_move(gamestate, card)
+
+        # If we have ally abilities available, activate them
+        ally_moves = self._get_activate_all_ally_abilities(gamestate)
+        if ally_moves:
+            return ally_moves
 
         # If we can afford a card, buy it, starting with the most expensive
         if playerstate[Values.TRADE] > 0:

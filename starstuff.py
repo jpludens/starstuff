@@ -1,7 +1,9 @@
 # Goal: Implement choices (tuples?)
-# Goal: Implement faction abilities
 #       need to track availabilityby individual card
 # Goal: Implement remaining abilities
+
+# Goal: Use a Strategy class to trigger deterministic abilities
+# Goal: use a Strategy class to mimic app
 
 # Goal: Create a data visualisation scheme for displaying an entire game's log of moves
 #       (eg, cards bought each round, additional cards drawn, damage done, etc)
@@ -15,7 +17,7 @@ from pprint import PrettyPrinter
 
 from enums import Factions, Values
 from gamestate import GameState
-from strategies import ExplorerStrategy, SplurgeStrategy, FactionStrategy
+from strategies import ExplorerStrategy, FactionStrategy
 
 
 def play_game():

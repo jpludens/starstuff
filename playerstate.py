@@ -83,7 +83,7 @@ class PlayerState(object):
 
         ships = []
         for card in self[Zones.IN_PLAY]:
-            card.clear_abilities()
+            card.remove_from_play()
             if card.is_ship():
                 ships.append(card)
         for ship in ships:
@@ -92,7 +92,7 @@ class PlayerState(object):
         self.draw(5)
 
     def destroy_base(self, base):
-        base.clear_abilities()
+        base.remove_from_play()
         move_list_item(base, self[Zones.IN_PLAY], self[Zones.DISCARD])
 
     def count_explorers(self):

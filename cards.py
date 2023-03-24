@@ -11,14 +11,18 @@ class Card(object):
 
     def __init__(self):
         self.available_abilities = {}
+        self.active_factions = set()
 
-    def initialize_abilities(self):
+    def put_in_play(self):
+        if self.faction:
+            self.active_factions.add(self.faction)
         self.available_abilities.update(self.abilities)
 
-    def mark_ability_used(self, ability_type):
+    def use_ability(self, ability_type):
         del self.available_abilities[ability_type]
 
-    def clear_abilities(self):
+    def remove_from_play(self):
+        self.active_factions.clear()
         self.available_abilities.clear()
 
     def is_base(self):

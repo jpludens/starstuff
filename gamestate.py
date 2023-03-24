@@ -1,4 +1,5 @@
 import logging
+from collections import Counter
 from enums import Abilities, Actions, CardTypes, Values, Zones
 from random import shuffle
 from util import move_list_item
@@ -27,6 +28,7 @@ class GameState(object):
         self.turn_number = 1
         self.active_player = self.alice
         self.inactive_player = self.bob
+        self.active_factions = Counter()
 
     def do_move(self, move):
         if move.action == Actions.PLAY:
@@ -34,7 +36,8 @@ class GameState(object):
             move_list_item(move.target,
                            move.actor[Zones.HAND],
                            move.actor[Zones.IN_PLAY])
-            move.target.initialize_abilities()
+            move.target.put_in_play()
+            self.active_factions.update(move.target.active_factions)
             if move.target.card_type == CardTypes.SHIP:
                 self._apply_abilities(move)
 
@@ -42,9 +45,14 @@ class GameState(object):
             logging.warning("{} is ACTIVATING: {}".format(move.actor.name, move.target.name))
             self._apply_abilities(move)
 
+        elif move.action == Actions.ALLY:
+            logging.warning("{} is TRIGGERING {}'s Ally Ability".format(move.actor.name, move.target.name))
+            self._apply_abilities(move)
+
         elif move.action == Actions.SCRAP:
             logging.warning("{} is SCRAPPING: {}".format(move.actor.name, move.target.name))
-            move_list_item(move.target, move.actor[Zones.IN_PLAY], [])
+            move.actor[Zones.IN_PLAY].remove(move.target)
+            self.active_factions.subtract(move.target.active_factions)
             self._apply_abilities(move)
 
         elif move.action == Actions.BUY:
@@ -74,23 +82,24 @@ class GameState(object):
             # Attack Opponent
             else:
                 logging.warning("{} is ATTACKING {} for {} damage!".format(move.actor.name,
-                                                                       move.target.name,
-                                                                       move.actor[Values.DAMAGE]))
+                                                                           move.target.name,
+                                                                           move.actor[Values.DAMAGE]))
                 move.target[Values.AUTHORITY] -= move.actor[Values.DAMAGE]
                 move.actor[Values.DAMAGE] = 0
                 logging.warning("{} has {} AUTHORITY remaining".format(move.target.name,
-                                                                   move.target[Values.AUTHORITY]))
+                                                                       move.target[Values.AUTHORITY]))
 
         elif move.action == Actions.END_TURN:
             logging.warning("{} is ENDING THEIR TURN".format(move.actor.name))
             self.active_player.state.end_turn()
+            self.active_factions.clear()
             self.active_player, self.inactive_player = self.inactive_player, self.active_player
             for base in self.active_player[Zones.IN_PLAY]:
-                base.initialize_abilities()
+                base.put_in_play()
             self.turn_number += 1
 
     def _apply_abilities(self, move):
-        move.target.mark_ability_used(move.action)
+        move.target.use_ability(move.action)
 
         for key, value in move.target.abilities[move.action].items():
             if key in [Values.DAMAGE, Values.TRADE, Values.AUTHORITY]:
