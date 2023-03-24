@@ -1,43 +1,30 @@
 from random import shuffle
+from collections import Counter
 
-from cards import Scout, Viper, Explorer
+from cards import Scout, Viper
 from util import move_list_contents, move_list_item
-from enums import CardTypes, Values, Zones
-
-
-class Player(object):
-    def __init__(self, name, strategy, state=None):
-        self.name = name
-        self.strategy = strategy
-        self.state = state
-
-    def get_moves(self, gamestate):
-        assert gamestate.active_player is self
-        return self.strategy.get_moves(gamestate)
-
-    # Allows dict-style access to "values" and "zones" in PlayerState
-    def __getitem__(self, item):
-        return self.state[item]
-
-    # Allows dict-style access to "values" and "zones" in PlayerState
-    def __setitem__(self, item, *args, **kwargs):
-        return self.state.__setitem__(item, *args, **kwargs)
+from enums import ValueTypes, Zones
 
 
 class PlayerState(object):
-    def __init__(self, first_player=False):
+    def __init__(self, name="Unnamed Player", first_player=False):
+        self.name = name
+
         self.values = {
-            Values.AUTHORITY: 50,
-            Values.TRADE: 0,
-            Values.DAMAGE: 0
+            ValueTypes.AUTHORITY: 50,
+            ValueTypes.TRADE: 0,
+            ValueTypes.DAMAGE: 0
         }
 
+        # noinspection PyTypeChecker
         self.zones = {
             Zones.DECK: [Scout()] * 8 + [Viper()] * 2,
             Zones.HAND: [],
             Zones.IN_PLAY: [],
             Zones.DISCARD: []
         }
+
+        self.active_factions = Counter()
 
         shuffle(self.zones[Zones.DECK])
         self.draw(3 if first_player else 5)
@@ -50,13 +37,11 @@ class PlayerState(object):
             return self.zones[item]
 
     # Allow dict-style access to values and zones
-    # Presumes the key argument is an Enum value
-    def __setitem__(self, key, *args, **kwargs):
+    def __setitem__(self, key, value):
         if key in self.values:
-            self.values.__setitem__(key, *args, **kwargs)
+            self.values[key] = value
         elif key in self.zones:
-            raise KeyError  # this probably shouldn't happen
-            # self.zones.__setitem__(item, *args, **kwargs)
+            self.zones[key] = value
         else:
             raise KeyError
 
@@ -77,13 +62,18 @@ class PlayerState(object):
                     return
             self[Zones.HAND].append(card)
 
+    def start_turn(self):
+        for base in self[Zones.IN_PLAY]:
+            base.initialize_in_play()
+
     def end_turn(self):
-        self[Values.DAMAGE] = 0
-        self[Values.TRADE] = 0
+        self[ValueTypes.DAMAGE] = 0
+        self[ValueTypes.TRADE] = 0
+        self.active_factions.clear()
 
         ships = []
         for card in self[Zones.IN_PLAY]:
-            card.remove_from_play()
+            card.deinitialize_from_play()
             if card.is_ship():
                 ships.append(card)
         for ship in ships:
@@ -92,8 +82,5 @@ class PlayerState(object):
         self.draw(5)
 
     def destroy_base(self, base):
-        base.remove_from_play()
+        base.deinitialize_from_play()
         move_list_item(base, self[Zones.IN_PLAY], self[Zones.DISCARD])
-
-    def count_explorers(self):
-        return sum([zone.count(Explorer) for zone in self.zones.values()])

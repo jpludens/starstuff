@@ -1,18 +1,35 @@
+# Goal: YAR Yet Another Refactor in advance of remaining abilities
+#    Keep Gamestate and Playerstate very dumb and mechanical, move all simplification logic to the strategy layer
+#    Every single piece of information required from players constitutes an entire Move
+#    So, Gamestate will activate played ships, but if they require a choice (Patrol Mech),
+#       state execution halts and a new move is requested. Same with, say, activating Barter World
+
+
 # Goal: Implement remaining abilities
 #    Mech World
 #    Destroy Base
 #    Blob Carrier
 #    Freighter / Central Office
+#         change "buy" to "acquire"
+#         count available topdecks
+#         "buy" is now a special acquire that spends trade
+#         "topdeck" is like buy ... but topdecks. both reduce tracked topdeck counts
 #    Embassy Yacht
+#           Conditionality
 #    Scrap Trade
+#         Scrap move with targets
 #    Scrap / Junkyard
 #      Machine Base
 #      Brain World
 #    Blob World
+#          gamestate needs to keep an examinable log of turn actions to be searched for Actions.PLAY/Factions.BLOB
 #    Discard
 #    Stealth Needle
+#          Target move
 #    Fleet HQ
+#           introduce a check that examines all moves for Actions.Play with a card with CardType.SHIP
 #    Recycling Station
+#       Discard move with targets
 
 # Goal: Use a Strategy class to trigger deterministic abilities
 # Goal: use a Strategy class to mimic app
@@ -27,29 +44,33 @@
 from collections import Counter
 from pprint import PrettyPrinter
 
-from enums import Factions, Values
+from enums import Factions, ValueTypes, PlayerIndicators
 from gamestate import GameState
 from strategies import ExplorerStrategy, FactionStrategy
 
 
 def play_game():
-    alice_strategy = FactionStrategy(Factions.BLOB)
+    # carter_strategy = ExplorerStrategy(max_exp=25,
+    #                                    min_exp=6,
+    #                                    ratio=2)
 
-    bob_strategy = FactionStrategy(Factions.TRADE_FEDERATION)
+    player_1 = "Alice"
+    player_2 = "Bob"
 
-    carter_strategy = ExplorerStrategy(max_exp=25,
-                                       min_exp=6,
-                                       ratio=2)
+    strategies = {
+        player_1: FactionStrategy(Factions.BLOB),
+        player_2: FactionStrategy(Factions.TRADE_FEDERATION)}
 
-    gamestate = GameState(alice_strategy, bob_strategy)
+    gamestate = GameState(player_1, player_2)
     while True:
-        moves = gamestate.active_player.get_moves(gamestate)
+        active_player_name = gamestate[PlayerIndicators.ACTIVE].name
+        moves = strategies[active_player_name].get_moves(gamestate)
         for move in moves:
-            gamestate.do_move(move)
+            move.execute(gamestate)
 
             # Check for Victory
-            if gamestate.inactive_player.state.values[Values.AUTHORITY] <= 0:
-                result = (1, gamestate.turn_number) if gamestate.active_player.name == "Alice" \
+            if gamestate[PlayerIndicators.INACTIVE][ValueTypes.AUTHORITY] <= 0:
+                result = (1, gamestate.turn_number) if gamestate[PlayerIndicators.ACTIVE].name == "Alice" \
                     else (2, gamestate.turn_number)
                 return result
 

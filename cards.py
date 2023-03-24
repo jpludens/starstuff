@@ -1,4 +1,8 @@
-from enums import Abilities, Actions, CardTypes, Factions, Values
+import logging
+import random
+
+from effects import ValueEffect, DrawEffect
+from enums import Abilities, Triggers, CardTypes, Factions, ValueTypes, PlayerIndicators
 
 
 class Card(object):
@@ -13,15 +17,30 @@ class Card(object):
         self.available_abilities = {}
         self.active_factions = set()
 
-    def put_in_play(self):
+    def initialize_in_play(self):
         if self.faction:
             self.active_factions.add(self.faction)
         self.available_abilities.update(self.abilities)
 
-    def use_ability(self, ability_type):
-        del self.available_abilities[ability_type]
+    def trigger_ability(self, trigger):
+        effects = self.available_abilities[trigger]
+        del self.available_abilities[trigger]
+        replaced_effects = []
+        for k, v in effects.items():
+            if isinstance(k, ValueTypes):
+                replaced_effects.append(ValueEffect(PlayerIndicators.ACTIVE, k, v))
+            elif k == Abilities.DRAW:
+                replaced_effects.append(DrawEffect(PlayerIndicators.ACTIVE, v))
+            elif k == Abilities.CHOICE:
+                # TODO: This effect should be created by a Choose move
+                key = random.choice(list(v))
+                logging.warning("randomly 'CHOOSING' {}".format(key))
+                replaced_effects.append(ValueEffect(PlayerIndicators.ACTIVE, key, v[key]))
+            else:
+                logging.warning("Ignoring ability - {}: {}".format(k, v))
+        return replaced_effects
 
-    def remove_from_play(self):
+    def deinitialize_from_play(self):
         self.active_factions.clear()
         self.available_abilities.clear()
 
@@ -38,8 +57,8 @@ class Scout(Card):
     name = "Scout"
     cost = 0
     abilities = {
-        Actions.PLAY: {
-            Values.TRADE: 1
+        Triggers.SHIP: {
+            ValueTypes.TRADE: 1
         }
     }
 
@@ -49,8 +68,8 @@ class Viper(Card):
     name = "Viper"
     cost = 0
     abilities = {
-        Actions.PLAY: {
-            Values.DAMAGE: 1
+        Triggers.SHIP: {
+            ValueTypes.DAMAGE: 1
         }
     }
 
@@ -60,11 +79,11 @@ class Explorer(Card):
     name = "Explorer"
     cost = 2
     abilities = {
-        Actions.PLAY: {
-            Values.TRADE: 2
+        Triggers.SHIP: {
+            ValueTypes.TRADE: 2
         },
-        Actions.SCRAP: {
-            Values.DAMAGE: 2
+        Triggers.SCRAP: {
+            ValueTypes.DAMAGE: 2
         }
     }
 
@@ -76,10 +95,10 @@ class BlobFighter(Card):
     name = "Blob Fighter"
     cost = 1
     abilities = {
-        Actions.PLAY: {
-            Values.DAMAGE: 3
+        Triggers.SHIP: {
+            ValueTypes.DAMAGE: 3
         },
-        Actions.ALLY: {
+        Triggers.ALLY: {
             Abilities.DRAW: 1
         }
     }
@@ -91,11 +110,11 @@ class TradePod(Card):
     name = "Trade Pod"
     cost = 2
     abilities = {
-        Actions.PLAY: {
-            Values.TRADE: 3
+        Triggers.SHIP: {
+            ValueTypes.TRADE: 3
         },
-        Actions.ALLY: {
-            Values.DAMAGE: 2
+        Triggers.ALLY: {
+            ValueTypes.DAMAGE: 2
         }
     }
 
@@ -106,12 +125,12 @@ class BattlePod(Card):
     name = "Battle Pod"
     cost = 2
     abilities = {
-        Actions.PLAY: {
-            Values.DAMAGE: 4,
+        Triggers.SHIP: {
+            ValueTypes.DAMAGE: 4,
             Abilities.UNIMPLEMENTED: "Scrap Trade"
         },
-        Actions.ALLY: {
-            Values.DAMAGE: 2
+        Triggers.ALLY: {
+            ValueTypes.DAMAGE: 2
         }
     }
 
@@ -122,14 +141,14 @@ class Ram(Card):
     name = "Ram"
     cost = 3
     abilities = {
-        Actions.PLAY: {
-            Values.DAMAGE: 5
+        Triggers.SHIP: {
+            ValueTypes.DAMAGE: 5
         },
-        Actions.ALLY: {
-            Values.DAMAGE: 2
+        Triggers.ALLY: {
+            ValueTypes.DAMAGE: 2
         },
-        Actions.SCRAP: {
-            Values.TRADE: 3
+        Triggers.SCRAP: {
+            ValueTypes.TRADE: 3
         }
     }
 
@@ -140,10 +159,10 @@ class BlobDestroyer(Card):
     name = "Blob Destroyer"
     cost = 4
     abilities = {
-        Actions.PLAY: {
-            Values.DAMAGE: 6
+        Triggers.SHIP: {
+            ValueTypes.DAMAGE: 6
         },
-        Actions.ALLY: {
+        Triggers.ALLY: {
             Abilities.UNIMPLEMENTED: "Blow Base and/or Scrap Trade"
         }
     }
@@ -155,10 +174,10 @@ class BlobCarrier(Card):
     name = "Blob Carrier"
     cost = 6
     abilities = {
-        Actions.PLAY: {
-            Values.DAMAGE: 7
+        Triggers.SHIP: {
+            ValueTypes.DAMAGE: 7
         },
-        Actions.ALLY: {
+        Triggers.ALLY: {
             Abilities.UNIMPLEMENTED: "Blob Carrier"
         }
     }
@@ -170,14 +189,14 @@ class BattleBlob(Card):
     name = "Battle Blob"
     cost = 6
     abilities = {
-        Actions.PLAY: {
-            Values.DAMAGE: 8
+        Triggers.SHIP: {
+            ValueTypes.DAMAGE: 8
         },
-        Actions.ALLY: {
+        Triggers.ALLY: {
             Abilities.DRAW: 1
         },
-        Actions.SCRAP: {
-            Values.DAMAGE: 4
+        Triggers.SCRAP: {
+            ValueTypes.DAMAGE: 4
         }
     }
 
@@ -188,11 +207,11 @@ class Mothership(Card):
     name = "Mothership"
     cost = 6
     abilities = {
-        Actions.PLAY: {
-            Values.DAMAGE: 6,
+        Triggers.SHIP: {
+            ValueTypes.DAMAGE: 6,
             Abilities.DRAW: 1
         },
-        Actions.ALLY: {
+        Triggers.ALLY: {
             Abilities.DRAW: 1
         }
     }
@@ -206,11 +225,11 @@ class BlobWheel(Card):
     cost = 3
     defense = 5
     abilities = {
-        Actions.ACTIVATE_BASE: {
-            Values.DAMAGE: 1,
+        Triggers.BASE: {
+            ValueTypes.DAMAGE: 1,
         },
-        Actions.SCRAP: {
-            Values.TRADE: 3
+        Triggers.SCRAP: {
+            ValueTypes.TRADE: 3
         }
     }
 
@@ -222,10 +241,10 @@ class TheHive(Card):
     cost = 5
     defense = 5
     abilities = {
-        Actions.ACTIVATE_BASE: {
-            Values.DAMAGE: 3,
+        Triggers.BASE: {
+            ValueTypes.DAMAGE: 3,
         },
-        Actions.ALLY: {
+        Triggers.ALLY: {
             Abilities.DRAW: 1
         }
     }
@@ -238,7 +257,7 @@ class BlobWorld(Card):
     cost = 8
     defense = 8
     abilities = {
-        Actions.ACTIVATE_BASE: {
+        Triggers.BASE: {
             Abilities.UNIMPLEMENTED: "Blob World Choice"
         }
     }
@@ -251,11 +270,11 @@ class FederationShuttle(Card):
     name = "Federation Shuttle"
     cost = 1
     abilities = {
-        Actions.PLAY: {
-            Values.TRADE: 2,
+        Triggers.SHIP: {
+            ValueTypes.TRADE: 2,
         },
-        Actions.ALLY: {
-            Values.AUTHORITY: 4,
+        Triggers.ALLY: {
+            ValueTypes.AUTHORITY: 4,
         }
     }
 
@@ -266,12 +285,12 @@ class Cutter(Card):
     name = "Cutter"
     cost = 2
     abilities = {
-        Actions.PLAY: {
-            Values.AUTHORITY: 4,
-            Values.TRADE: 2,
+        Triggers.SHIP: {
+            ValueTypes.AUTHORITY: 4,
+            ValueTypes.TRADE: 2,
         },
-        Actions.ALLY: {
-            Values.DAMAGE: 4,
+        Triggers.ALLY: {
+            ValueTypes.DAMAGE: 4,
         }
     }
 
@@ -282,9 +301,9 @@ class EmbassyYacht(Card):
     name = "Embassy Yacht"
     cost = 3
     abilities = {
-        Actions.PLAY: {
-            Values.AUTHORITY: 3,
-            Values.TRADE: 2,
+        Triggers.SHIP: {
+            ValueTypes.AUTHORITY: 3,
+            ValueTypes.TRADE: 2,
             Abilities.UNIMPLEMENTED: "Embassy Draw"
         }
     }
@@ -296,10 +315,10 @@ class Freighter(Card):
     name = "Freighter"
     cost = 4
     abilities = {
-        Actions.PLAY: {
-            Values.TRADE: 4,
+        Triggers.SHIP: {
+            ValueTypes.TRADE: 4,
         },
-        Actions.ALLY: {
+        Triggers.ALLY: {
             Abilities.UNIMPLEMENTED: "Shop To Top"
         }
     }
@@ -311,11 +330,11 @@ class TradeEscort(Card):
     name = "Trade Escort"
     cost = 5
     abilities = {
-        Actions.PLAY: {
-            Values.AUTHORITY: 4,
-            Values.DAMAGE: 4,
+        Triggers.SHIP: {
+            ValueTypes.AUTHORITY: 4,
+            ValueTypes.DAMAGE: 4,
         },
-        Actions.ALLY: {
+        Triggers.ALLY: {
             Abilities.DRAW: 1
         }
     }
@@ -327,12 +346,12 @@ class Flagship(Card):
     name = "Flagship"
     cost = 6
     abilities = {
-        Actions.PLAY: {
-            Values.DAMAGE: 5,
+        Triggers.SHIP: {
+            ValueTypes.DAMAGE: 5,
             Abilities.DRAW: 1
         },
-        Actions.ALLY: {
-            Values.AUTHORITY: 5,
+        Triggers.ALLY: {
+            ValueTypes.AUTHORITY: 5,
         }
     }
 
@@ -343,12 +362,12 @@ class CommandShip(Card):
     name = "Command Ship"
     cost = 8
     abilities = {
-        Actions.PLAY: {
-            Values.AUTHORITY: 4,
-            Values.DAMAGE: 5,
+        Triggers.SHIP: {
+            ValueTypes.AUTHORITY: 4,
+            ValueTypes.DAMAGE: 5,
             Abilities.DRAW: 2
         },
-        Actions.ALLY: {
+        Triggers.ALLY: {
             Abilities.UNIMPLEMENTED: "Blow Base"
         }
     }
@@ -362,14 +381,14 @@ class TradingPost(Card):
     cost = 3
     defense = 4
     abilities = {
-        Actions.ACTIVATE_BASE: {
+        Triggers.BASE: {
             Abilities.CHOICE: {
-                Values.AUTHORITY: 1,
-                Values.TRADE: 1
+                ValueTypes.AUTHORITY: 1,
+                ValueTypes.TRADE: 1
             }
         },
-        Actions.SCRAP: {
-            Values.DAMAGE: 3
+        Triggers.SCRAP: {
+            ValueTypes.DAMAGE: 3
         }
     }
 
@@ -381,14 +400,14 @@ class BarterWorld(Card):
     cost = 4
     defense = 4
     abilities = {
-        Actions.ACTIVATE_BASE: {
+        Triggers.BASE: {
             Abilities.CHOICE: {
-                Values.AUTHORITY: 2,
-                Values.TRADE: 2
+                ValueTypes.AUTHORITY: 2,
+                ValueTypes.TRADE: 2
             }
         },
-        Actions.SCRAP: {
-            Values.DAMAGE: 5
+        Triggers.SCRAP: {
+            ValueTypes.DAMAGE: 5
         }
     }
 
@@ -400,14 +419,14 @@ class DefenseCenter(Card):
     cost = 5
     defense = 5
     abilities = {
-        Actions.ACTIVATE_BASE: {
+        Triggers.BASE: {
             Abilities.CHOICE: {
-                Values.AUTHORITY: 3,
-                Values.DAMAGE: 2
+                ValueTypes.AUTHORITY: 3,
+                ValueTypes.DAMAGE: 2
             }
         },
-        Actions.ALLY: {
-            Values.DAMAGE: 2
+        Triggers.ALLY: {
+            ValueTypes.DAMAGE: 2
         }
     }
 
@@ -419,10 +438,10 @@ class PortOfCall(Card):
     cost = 6
     defense = 6
     abilities = {
-        Actions.ACTIVATE_BASE: {
-            Values.TRADE: 3
+        Triggers.BASE: {
+            ValueTypes.TRADE: 3
         },
-        Actions.SCRAP: {
+        Triggers.SCRAP: {
             Abilities.DRAW: 1,
             Abilities.UNIMPLEMENTED: "Blow Base"
         }
@@ -436,11 +455,11 @@ class CentralOffice(Card):
     cost = 7
     defense = 6
     abilities = {
-        Actions.ACTIVATE_BASE: {
-            Values.TRADE: 2,
+        Triggers.BASE: {
+            ValueTypes.TRADE: 2,
             Abilities.UNIMPLEMENTED: "Freighter"
         },
-        Actions.ALLY: {
+        Triggers.ALLY: {
             Abilities.DRAW: 1
         }
     }
@@ -453,12 +472,12 @@ class TradeBot(Card):
     name = "Trade Bot"
     cost = 1
     abilities = {
-        Actions.PLAY: {
-            Values.TRADE: 1,
-            Abilities.UNIMPLEMENTED: Actions.SCRAP
+        Triggers.SHIP: {
+            ValueTypes.TRADE: 1,
+            Abilities.UNIMPLEMENTED: Triggers.SCRAP
         },
-        Actions.ALLY: {
-            Values.DAMAGE: 2,
+        Triggers.ALLY: {
+            ValueTypes.DAMAGE: 2,
         }
     }
 
@@ -469,12 +488,12 @@ class MissileBot(Card):
     name = "Missile Bot"
     cost = 2
     abilities = {
-        Actions.PLAY: {
-            Values.DAMAGE: 2,
-            Abilities.UNIMPLEMENTED: Actions.SCRAP
+        Triggers.SHIP: {
+            ValueTypes.DAMAGE: 2,
+            Abilities.UNIMPLEMENTED: Triggers.SCRAP
         },
-        Actions.ALLY: {
-            Values.DAMAGE: 2,
+        Triggers.ALLY: {
+            ValueTypes.DAMAGE: 2,
         }
     }
 
@@ -485,12 +504,12 @@ class SupplyBot(Card):
     name = "Supply Bot"
     cost = 3
     abilities = {
-        Actions.PLAY: {
-            Values.TRADE: 2,
-            Abilities.UNIMPLEMENTED: Actions.SCRAP
+        Triggers.SHIP: {
+            ValueTypes.TRADE: 2,
+            Abilities.UNIMPLEMENTED: Triggers.SCRAP
         },
-        Actions.ALLY: {
-            Values.DAMAGE: 2,
+        Triggers.ALLY: {
+            ValueTypes.DAMAGE: 2,
         }
     }
 
@@ -501,14 +520,14 @@ class PatrolMech(Card):
     name = "Patrol Mech"
     cost = 4
     abilities = {
-        Actions.PLAY: {
+        Triggers.SHIP: {
             Abilities.CHOICE: {
-                Values.TRADE: 3,
-                Values.DAMAGE: 5
+                ValueTypes.TRADE: 3,
+                ValueTypes.DAMAGE: 5
             }
         },
-        Actions.ALLY: {
-            Abilities.UNIMPLEMENTED: Actions.SCRAP
+        Triggers.ALLY: {
+            Abilities.UNIMPLEMENTED: Triggers.SCRAP
         }
     }
 
@@ -519,7 +538,7 @@ class StealthNeedle(Card):
     name = "Stealth Needle"
     cost = 4
     abilities = {
-        Actions.PLAY: {
+        Triggers.SHIP: {
             Abilities.UNIMPLEMENTED: "Stealth Needle"
         }
     }
@@ -531,11 +550,11 @@ class BattleMech(Card):
     name = "Battle Mech"
     cost = 5
     abilities = {
-        Actions.PLAY: {
-            Values.DAMAGE: 4,
-            Abilities.UNIMPLEMENTED: Actions.SCRAP
+        Triggers.SHIP: {
+            ValueTypes.DAMAGE: 4,
+            Abilities.UNIMPLEMENTED: Triggers.SCRAP
         },
-        Actions.ALLY: {
+        Triggers.ALLY: {
             Abilities.DRAW: 1
         }
     }
@@ -547,14 +566,14 @@ class MissileMech(Card):
     name = "Missile Mech"
     cost = 6
     abilities = {
-        Actions.PLAY: {
-            Values.DAMAGE: 6,
+        Triggers.SHIP: {
+            ValueTypes.DAMAGE: 6,
             Abilities.UNIMPLEMENTED: "Blow Base"
         },
-        Actions.ALLY: {
-            Values.AUTHORITY: 0,
-            Values.TRADE: 2,
-            Values.DAMAGE: 0,
+        Triggers.ALLY: {
+            ValueTypes.AUTHORITY: 0,
+            ValueTypes.TRADE: 2,
+            ValueTypes.DAMAGE: 0,
             Abilities.DRAW: 1
         }
     }
@@ -568,8 +587,8 @@ class BattleStation(Card):
     cost = 3
     defense = 5
     abilities = {
-        Actions.SCRAP: {
-            Values.DAMAGE: 5,
+        Triggers.SCRAP: {
+            ValueTypes.DAMAGE: 5,
         }
     }
 
@@ -581,7 +600,7 @@ class MechWorld(Card):
     cost = 5
     defense = 6
     abilities = {
-        Actions.ACTIVATE_BASE: {
+        Triggers.BASE: {
             Abilities.UNIMPLEMENTED: "Mech World"
         }
     }
@@ -594,8 +613,8 @@ class Junkyard(Card):
     cost = 6
     defense = 5
     abilities = {
-        Actions.ACTIVATE_BASE: {
-            Abilities.UNIMPLEMENTED: Actions.SCRAP
+        Triggers.BASE: {
+            Abilities.UNIMPLEMENTED: Triggers.SCRAP
         }
     }
 
@@ -607,7 +626,7 @@ class MachineBase(Card):
     cost = 7
     defense = 6
     abilities = {
-        Actions.ACTIVATE_BASE: {
+        Triggers.BASE: {
             Abilities.UNIMPLEMENTED: "Machine Base"
         }
     }
@@ -620,7 +639,7 @@ class BrainWorld(Card):
     cost = 8
     defense = 6
     abilities = {
-        Actions.ACTIVATE_BASE: {
+        Triggers.BASE: {
             Abilities.UNIMPLEMENTED: "Brain World"
         }
     }
@@ -633,12 +652,12 @@ class ImperialFighter(Card):
     name = "Imperial Fighter"
     cost = 1
     abilities = {
-        Actions.PLAY: {
-            Values.DAMAGE: 2,
+        Triggers.SHIP: {
+            ValueTypes.DAMAGE: 2,
             Abilities.UNIMPLEMENTED: "Discard"
         },
-        Actions.ALLY: {
-            Values.DAMAGE: 2,
+        Triggers.ALLY: {
+            ValueTypes.DAMAGE: 2,
         }
     }
 
@@ -649,12 +668,12 @@ class Corvette(Card):
     name = "Corvette"
     cost = 2
     abilities = {
-        Actions.PLAY: {
-            Values.DAMAGE: 1,
+        Triggers.SHIP: {
+            ValueTypes.DAMAGE: 1,
             Abilities.DRAW: 1
         },
-        Actions.ALLY: {
-            Values.DAMAGE: 2,
+        Triggers.ALLY: {
+            ValueTypes.DAMAGE: 2,
         }
     }
 
@@ -665,11 +684,11 @@ class SurveyShip(Card):
     name = "Survey Ship"
     cost = 3
     abilities = {
-        Actions.PLAY: {
-            Values.TRADE: 3,
+        Triggers.SHIP: {
+            ValueTypes.TRADE: 3,
             Abilities.DRAW: 1
         },
-        Actions.SCRAP: {
+        Triggers.SCRAP: {
             Abilities.UNIMPLEMENTED: "Discard"
         }
     }
@@ -681,14 +700,14 @@ class ImperialFrigate(Card):
     name = "Imperial Frigate"
     cost = 3
     abilities = {
-        Actions.PLAY: {
-            Values.DAMAGE: 4,
+        Triggers.SHIP: {
+            ValueTypes.DAMAGE: 4,
             Abilities.UNIMPLEMENTED: "Discard"
         },
-        Actions.ALLY: {
-            Values.DAMAGE: 2,
+        Triggers.ALLY: {
+            ValueTypes.DAMAGE: 2,
         },
-        Actions.SCRAP: {
+        Triggers.SCRAP: {
             Abilities.DRAW: 1
         }
 
@@ -701,14 +720,14 @@ class BattleCruiser(Card):
     name = "BattleCruiser"
     cost = 6
     abilities = {
-        Actions.PLAY: {
-            Values.DAMAGE: 6,
+        Triggers.SHIP: {
+            ValueTypes.DAMAGE: 6,
             Abilities.DRAW: 1
         },
-        Actions.ALLY: {
+        Triggers.ALLY: {
             Abilities.UNIMPLEMENTED: "Discard"
         },
-        Actions.SCRAP: {
+        Triggers.SCRAP: {
             Abilities.UNIMPLEMENTED: "Draw AND Blow Base",
         }
     }
@@ -720,12 +739,12 @@ class Dreadnought(Card):
     name = "Dreadnought"
     cost = 7
     abilities = {
-        Actions.PLAY: {
-            Values.DAMAGE: 7,
+        Triggers.SHIP: {
+            ValueTypes.DAMAGE: 7,
             Abilities.DRAW: 1
         },
-        Actions.SCRAP: {
-            Values.DAMAGE: 5,
+        Triggers.SCRAP: {
+            ValueTypes.DAMAGE: 5,
         }
     }
 
@@ -738,7 +757,7 @@ class RecyclingStation(Card):
     cost = 4
     defense = 4
     abilities = {
-        Actions.ACTIVATE_BASE: {
+        Triggers.BASE: {
             Abilities.UNIMPLEMENTED: "Recycling Station"
         }
     }
@@ -751,14 +770,14 @@ class SpaceStation(Card):
     cost = 4
     defense = 4
     abilities = {
-        Actions.ACTIVATE_BASE: {
-            Values.DAMAGE: 2
+        Triggers.BASE: {
+            ValueTypes.DAMAGE: 2
         },
-        Actions.ALLY: {
-            Values.DAMAGE: 2
+        Triggers.ALLY: {
+            ValueTypes.DAMAGE: 2
         },
-        Actions.SCRAP: {
-            Values.TRADE: 4
+        Triggers.SCRAP: {
+            ValueTypes.TRADE: 4
         }
     }
 
@@ -770,11 +789,11 @@ class WarWorld(Card):
     cost = 5
     defense = 4
     abilities = {
-        Actions.ACTIVATE_BASE: {
-            Values.DAMAGE: 3
+        Triggers.BASE: {
+            ValueTypes.DAMAGE: 3
         },
-        Actions.ALLY: {
-            Values.DAMAGE: 4
+        Triggers.ALLY: {
+            ValueTypes.DAMAGE: 4
         }
     }
 
@@ -786,10 +805,10 @@ class RoyalRedoubt(Card):
     cost = 6
     defense = 6
     abilities = {
-        Actions.ACTIVATE_BASE: {
-            Values.DAMAGE: 3
+        Triggers.BASE: {
+            ValueTypes.DAMAGE: 3
         },
-        Actions.ALLY: {
+        Triggers.ALLY: {
             Abilities.UNIMPLEMENTED: "Discard"
         }
     }
@@ -802,7 +821,7 @@ class FleetHQ(Card):
     cost = 8
     defense = 8
     abilities = {
-        Actions.ACTIVATE_BASE: {
+        Triggers.BASE: {
             Abilities.UNIMPLEMENTED: "Fleet HQ"
         }
     }

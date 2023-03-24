@@ -7,20 +7,17 @@ class CardTypes(Enum):
     OUTPOST = "OUTPOST"
 
 
-class Values(Enum):
+class ValueTypes(Enum):
     AUTHORITY = "AUTHORITY"
     TRADE = "TRADE"
     DAMAGE = "DAMAGE"
 
 
-class Actions(Enum):
-    BUY = "BUY"
-    PLAY = "PLAY"
+class Triggers(Enum):
+    SHIP = "SHIP"
+    BASE = "BASE"
     ALLY = "ALLY"
     SCRAP = "SCRAP"
-    ATTACK = "ATTACK"
-    END_TURN = "END_TURN"
-    ACTIVATE_BASE = "ACTIVATE_BASE"
 
 
 class Zones(Enum):
@@ -43,3 +40,8 @@ class Abilities(Enum):
     DRAW = "DRAW"
     CHOICE = "CHOICE"
     UNIMPLEMENTED = "UNIMPLEMENTED"
+
+
+class PlayerIndicators(Enum):
+    ACTIVE = "ACTIVE"
+    INACTIVE = "INACTIVE"
