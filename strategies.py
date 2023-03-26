@@ -1,6 +1,7 @@
+from random import choice
 from cards import Explorer
-from enums import Triggers, CardTypes, ValueTypes, Zones, Factions, PlayerIndicators
-from move import PlayCard, ActivateBase, AllyAbility, ScrapAbility, BuyCard, EndTurn, Attack
+from enums import Triggers, CardTypes, ValueTypes, Zones, Factions, PlayerIndicators, Abilities
+from move import PlayCard, ActivateBase, AllyAbility, ScrapAbility, BuyCard, EndTurn, Attack, Choose
 
 
 class Strategy(object):
@@ -9,6 +10,9 @@ class Strategy(object):
         moves = []
         for card in gamestate[PlayerIndicators.ACTIVE][Zones.HAND]:
             moves.append(PlayCard(card))
+            if card.card_type == CardTypes.SHIP and Abilities.CHOICE in card.abilities[Triggers.SHIP]:
+                chosen_choice = choice(list(card.abilities[Triggers.SHIP][Abilities.CHOICE].keys()))
+                moves.append(Choose(chosen_choice))
         return moves
 
     @classmethod
@@ -21,6 +25,9 @@ class Strategy(object):
 
     @classmethod
     def _get_activate_base_move(cls, card):
+        if Abilities.CHOICE in card.abilities[Triggers.BASE]:
+            chosen_choice = choice(list(card.abilities[Triggers.BASE][Abilities.CHOICE].keys()))
+            return [ActivateBase(card), Choose(chosen_choice)]
         return [ActivateBase(card)]
 
     @classmethod

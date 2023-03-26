@@ -24,6 +24,9 @@ class GameState(object):
 
         self.turn_number = 1
 
+        self.victor = None
+        self.pending_choice = None
+
     def __getitem__(self, key):
         if isinstance(key, PlayerIndicators):
             return self.players[key]

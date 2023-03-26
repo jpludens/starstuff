@@ -1,6 +1,7 @@
 import logging
 
 from cards import Explorer, Card
+from effects import ValueEffect
 from enums import Zones, CardTypes, Triggers, ValueTypes, PlayerIndicators
 from util import move_list_item
 
@@ -108,6 +109,9 @@ class Attack(Move):
             logging.warning("{} has {} AUTHORITY remaining".format(self.target.name,
                                                                    self.target[ValueTypes.AUTHORITY]))
 
+            if gamestate[PlayerIndicators.INACTIVE][ValueTypes.AUTHORITY] <= 0:
+                gamestate.victor = gamestate[PlayerIndicators.ACTIVE].name
+
 
 class EndTurn(Move):
     def execute(self, gamestate):
@@ -116,8 +120,15 @@ class EndTurn(Move):
 
 
 class Choose(Move):
+    def __init__(self, choice):
+        self.choice = choice
+
     def execute(self, gamestate):
-        pass
+        value = gamestate.pending_choice[self.choice]
+        logging.warning("{} is CHOOSING {} {}".format(gamestate[PlayerIndicators.ACTIVE].name, value, self.choice.name))
+        effect = ValueEffect(PlayerIndicators.ACTIVE, self.choice, value)
+        effect.apply(gamestate)
+        gamestate.pending_choice = None
 
 
 class Target(Move):

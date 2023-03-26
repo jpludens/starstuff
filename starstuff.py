@@ -44,9 +44,9 @@
 from collections import Counter
 from pprint import PrettyPrinter
 
-from enums import Factions, ValueTypes, PlayerIndicators
+from enums import Factions, PlayerIndicators
 from gamestate import GameState
-from strategies import ExplorerStrategy, FactionStrategy
+from strategies import FactionStrategy
 
 
 def play_game():
@@ -69,17 +69,15 @@ def play_game():
             move.execute(gamestate)
 
             # Check for Victory
-            if gamestate[PlayerIndicators.INACTIVE][ValueTypes.AUTHORITY] <= 0:
-                result = (1, gamestate.turn_number) if gamestate[PlayerIndicators.ACTIVE].name == "Alice" \
-                    else (2, gamestate.turn_number)
-                return result
+            if gamestate.victor:
+                return gamestate.victor, gamestate.turn_number
 
 
 def battle(n=1):
     results = [play_game() for _ in range(n)]
-    print("Player 1 Wins: {}\nPlayer 2 Wins: {}".format(len([r for r in results if r[0] == 1]),
-                                                        len([r for r in results if r[0] == 2])))
+    print("Player 1 Wins: {}\nPlayer 2 Wins: {}".format(len([r for r in results if r[0] == "Alice"]),
+                                                        len([r for r in results if r[0] == "Bob"])))
     print("Player 1 Victory Turn Numbers:")
-    PrettyPrinter().pprint(sorted(Counter([result[1] for result in results if result[0] == 1]).items()))
+    PrettyPrinter().pprint(sorted(Counter([result[1] for result in results if result[0] == "Alice"]).items()))
     print("Player 2 Victory Turn Numbers:")
-    PrettyPrinter().pprint(sorted(Counter([result[1] for result in results if result[0] == 2]).items()))
+    PrettyPrinter().pprint(sorted(Counter([result[1] for result in results if result[0] == "Bob"]).items()))

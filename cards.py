@@ -1,7 +1,6 @@
 import logging
-import random
 
-from effects import ValueEffect, DrawEffect
+from effects import ValueEffect, DrawEffect, ChoiceEffect
 from enums import Abilities, Triggers, CardTypes, Factions, ValueTypes, PlayerIndicators
 
 
@@ -23,22 +22,18 @@ class Card(object):
         self.available_abilities.update(self.abilities)
 
     def trigger_ability(self, trigger):
-        effects = self.available_abilities[trigger]
-        del self.available_abilities[trigger]
-        replaced_effects = []
-        for k, v in effects.items():
+        effects_data = self.available_abilities.pop(trigger)
+        effects = []
+        for k, v in effects_data.items():
             if isinstance(k, ValueTypes):
-                replaced_effects.append(ValueEffect(PlayerIndicators.ACTIVE, k, v))
+                effects.append(ValueEffect(PlayerIndicators.ACTIVE, k, v))
             elif k == Abilities.DRAW:
-                replaced_effects.append(DrawEffect(PlayerIndicators.ACTIVE, v))
+                effects.append(DrawEffect(PlayerIndicators.ACTIVE, v))
             elif k == Abilities.CHOICE:
-                # TODO: This effect should be created by a Choose move
-                key = random.choice(list(v))
-                logging.warning("randomly 'CHOOSING' {}".format(key))
-                replaced_effects.append(ValueEffect(PlayerIndicators.ACTIVE, key, v[key]))
+                effects.append(ChoiceEffect(PlayerIndicators.ACTIVE, v))
             else:
                 logging.warning("Ignoring ability - {}: {}".format(k, v))
-        return replaced_effects
+        return effects
 
     def deinitialize_from_play(self):
         self.active_factions.clear()
