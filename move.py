@@ -1,7 +1,7 @@
 import logging
 
 from cards import Explorer, Card
-from enums import Zones, CardTypes, Triggers, ValueTypes, PlayerIndicators
+from enums import Zones, CardTypes, Triggers, ValueTypes
 from util import move_list_item
 
 
@@ -35,13 +35,13 @@ class PlayCard(AbilityActivation):
         self.card = card
 
     def execute(self, gamestate):
-        logging.warning("{} is PLAYING: {}".format(gamestate[PlayerIndicators.ACTIVE].name, self.card.name))
+        logging.warning("{} is PLAYING: {}".format(gamestate.active_player.name, self.card.name))
         move_list_item(self.card,
-                       gamestate[PlayerIndicators.ACTIVE][Zones.HAND],
-                       gamestate[PlayerIndicators.ACTIVE][Zones.IN_PLAY])
+                       gamestate.active_player[Zones.HAND],
+                       gamestate.active_player[Zones.IN_PLAY])
         self.card.initialize_in_play()
 
-        gamestate[PlayerIndicators.ACTIVE].active_factions.update(self.card.active_factions)
+        gamestate.active_player.active_factions.update(self.card.active_factions)
         if self.card.card_type == CardTypes.SHIP:
             self.activate_ability(gamestate)
 
@@ -64,8 +64,8 @@ class ActivateScrap(AbilityActivation):
         self.card = card
 
     def execute(self, gamestate):
-        gamestate[PlayerIndicators.ACTIVE][Zones.IN_PLAY].remove(self.card)
-        gamestate[PlayerIndicators.ACTIVE].active_factions.subtract(self.card.active_factions)
+        gamestate.active_player[Zones.IN_PLAY].remove(self.card)
+        gamestate.active_player.active_factions.subtract(self.card.active_factions)
         self.activate_ability(gamestate)
 
 
@@ -74,19 +74,19 @@ class BuyCard(Move):
         self.card = card
 
     def execute(self, gamestate):
-        logging.warning("{} is BUYING: {}".format(gamestate[PlayerIndicators.ACTIVE].name, self.card.name))
+        logging.warning("{} is BUYING: {}".format(gamestate.active_player.name, self.card.name))
 
-        gamestate[PlayerIndicators.ACTIVE][ValueTypes.TRADE] -= self.card.cost
+        gamestate.active_player[ValueTypes.TRADE] -= self.card.cost
         logging.warning("{} spent {} TRADE and has {} remaining".format(
-            gamestate[PlayerIndicators.ACTIVE].name,
+            gamestate.active_player.name,
             self.card.cost,
-            gamestate[PlayerIndicators.ACTIVE][ValueTypes.TRADE]))
+            gamestate.active_player[ValueTypes.TRADE]))
 
         if self.card == Explorer:
             # TODO: Explorers aren't working
-            gamestate[PlayerIndicators.ACTIVE][Zones.DISCARD].append(self.card())
+            gamestate.active_player[Zones.DISCARD].append(self.card())
         else:
-            move_list_item(self.card, gamestate.trade_row, gamestate[PlayerIndicators.ACTIVE][Zones.DISCARD])
+            move_list_item(self.card, gamestate.trade_row, gamestate.active_player[Zones.DISCARD])
             gamestate.fill_trade_row()
 
 
@@ -98,32 +98,32 @@ class Attack(Move):
         # Attack Base
         if isinstance(self.target, Card):
             logging.warning("{} is ATTACKING {} for {} damage!".format(
-                gamestate[PlayerIndicators.ACTIVE].name,
+                gamestate.active_player.name,
                 self.target.name,
                 self.target.defense))
-            gamestate[PlayerIndicators.INACTIVE].destroy_base(self.target)
+            gamestate.opponent.destroy_base(self.target)
             logging.warning("{} has {} DAMAGE remaining".format(
-                gamestate[PlayerIndicators.ACTIVE].name,
-                gamestate[PlayerIndicators.ACTIVE][ValueTypes.AUTHORITY]))
+                gamestate.active_player.name,
+                gamestate.active_player[ValueTypes.AUTHORITY]))
 
         # Attack Opponent
         else:
             logging.warning("{} is ATTACKING {} for {} damage!".format(
-                gamestate[PlayerIndicators.ACTIVE].name,
+                gamestate.active_player.name,
                 self.target.name,
-                gamestate[PlayerIndicators.ACTIVE][ValueTypes.DAMAGE]))
-            self.target[ValueTypes.AUTHORITY] -= gamestate[PlayerIndicators.ACTIVE][ValueTypes.DAMAGE]
-            gamestate[PlayerIndicators.ACTIVE][ValueTypes.DAMAGE] = 0
+                gamestate.active_player[ValueTypes.DAMAGE]))
+            self.target[ValueTypes.AUTHORITY] -= gamestate.active_player[ValueTypes.DAMAGE]
+            gamestate.active_player[ValueTypes.DAMAGE] = 0
             logging.warning("{} has {} AUTHORITY remaining".format(self.target.name,
                                                                    self.target[ValueTypes.AUTHORITY]))
 
-            if gamestate[PlayerIndicators.INACTIVE][ValueTypes.AUTHORITY] <= 0:
-                gamestate.victor = gamestate[PlayerIndicators.ACTIVE].name
+            if gamestate.opponent[ValueTypes.AUTHORITY] <= 0:
+                gamestate.victor = gamestate.active_player.name
 
 
 class EndTurn(Move):
     def execute(self, gamestate):
-        logging.warning("{} is ENDING THEIR TURN".format(gamestate[PlayerIndicators.ACTIVE].name))
+        logging.warning("{} is ENDING THEIR TURN".format(gamestate.active_player.name))
         gamestate.next_turn()
 
 
@@ -132,7 +132,7 @@ class Choose(Move):
         self.choice = choice
 
     def execute(self, gamestate):
-        logging.warning("{} is CHOOSING {}".format(gamestate[PlayerIndicators.ACTIVE].name, self.choice.name))
+        logging.warning("{} is CHOOSING {}".format(gamestate.active_player.name, self.choice.name))
         gamestate.pending_choice.resolve(self.choice)
 
 

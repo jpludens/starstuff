@@ -1,36 +1,33 @@
 import logging
 
-from enums import Zones, PlayerIndicators
+from enums import Zones
 
 
 class Effect(object):
-    def __init__(self, player_indicator):
-        self.player_indicator = player_indicator
-
     def apply(self, gamestate):
         raise NotImplementedError
 
 
 class ValueEffect(Effect):
-    def __init__(self, player_indicator, value_type, amount):
-        super().__init__(player_indicator)
+    def __init__(self, value_type, amount):
+        super().__init__()
         self.value_type = value_type
         self.amount = amount
 
     def apply(self, gamestate):
-        player = gamestate.players[self.player_indicator]
+        player = gamestate.active_player
         player[self.value_type] += self.amount
         logging.warning("{} GAINS {} {} ({})".format(
             player.name, self.amount, self.value_type.name, player[self.value_type]))
 
 
 class DrawEffect(Effect):
-    def __init__(self, player_indicator, amount):
-        super().__init__(player_indicator)
+    def __init__(self, amount):
+        super().__init__()
         self.amount = amount
 
     def apply(self, gamestate):
-        player = gamestate.players[self.player_indicator]
+        player = gamestate.active_player
         for _ in range(self.amount):
             try:
                 player.draw(1)
@@ -41,19 +38,11 @@ class DrawEffect(Effect):
 
 
 class ScrapEffect(Effect):
-    class Parameters(object):
-        def __init__(self, *zones, up_to=1, mandatory=False):
-            self.zones = [z if z == Zones.TRADE_ROW else (PlayerIndicators.ACTIVE, z) for z in zones]
-            self.up_to = up_to
-            self.mandatory = mandatory
-
-    def __init__(self, player_indicator, parameters):
-        # card.move_from(Zones.TRADE_ROW).to(Zones.DISCARD)
-        super().__init__(player_indicator)
-        self.player_indicator = player_indicator
-        self.zones = parameters.zones
-        self.up_to = parameters.up_to
-        self.mandatory = parameters.mandatory
+    def __init__(self, *zones, up_to=1, mandatory=False):
+        super().__init__()
+        self.zones = list(zones)
+        self.up_to = up_to
+        self.mandatory = mandatory
 
         self.gamestate = None
 
@@ -63,10 +52,10 @@ class ScrapEffect(Effect):
         if any([gamestate[z] for z in self.zones]):
             gamestate.pending_scrap = self
             logging.warning("{} {} SCRAP from: {}".format(
-                gamestate[self.player_indicator].name, "must" if self.mandatory else "can", zone_names))
+                gamestate.active_player.name, "must" if self.mandatory else "can", zone_names))
         else:
             logging.warning("{} has no cards to scrap in: {}".format(
-                gamestate[self.player_indicator].name, zone_names))
+                gamestate.active_player.name, zone_names))
 
     def resolve(self, targets):
         if targets:
@@ -82,7 +71,7 @@ class ScrapEffect(Effect):
                         continue
                     else:
                         logging.warning("{} is scrapping {} from {}".format(
-                            self.gamestate[self.player_indicator].name,
+                            self.gamestate.active_player.name,
                             target.name,
                             zone.name if not isinstance(zone, tuple) else zone[1].name))
                         if zone == Zones.TRADE_ROW:
@@ -91,16 +80,16 @@ class ScrapEffect(Effect):
                 else:
                     raise ValueError("bad target")
 
-        elif self.mandatory:
-            assert not self.mandatory
-            logging.warning("{} doesn't scrap anything".format(self.gamestate[self.player_indicator].name))
+        else:
+            logging.warning("{} doesn't scrap anything".format(self.gamestate.active_player.name))
 
         self.gamestate.pending_scrap = None
+        self.gamestate = None
 
 
 class ChoiceEffect(Effect):
-    def __init__(self, player_indicator, choices):
-        super().__init__(player_indicator)
+    def __init__(self, choices):
+        super().__init__()
         self.choices = choices
         self.gamestate = None
 
@@ -108,12 +97,12 @@ class ChoiceEffect(Effect):
         self.gamestate = gamestate
         gamestate.pending_choice = self
         # TODO: Reyclying Station: Adjust this log message
-        player = gamestate.players[self.player_indicator]
         keys = list(self.choices.keys())
         logging.warning("{} can choose {} or {}".format(
-            player.name, keys[0].name, keys[1].name))
+            gamestate.active_player.name, keys[0].name, keys[1].name))
 
     def resolve(self, choice):
         assert choice in self.choices
         self.choices[choice].apply(self.gamestate)
         self.gamestate.pending_choice = None
+        self.gamestate = None

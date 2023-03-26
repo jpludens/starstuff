@@ -1,6 +1,6 @@
 from random import choice
 from cards import Explorer, Viper, Scout, MachineBase
-from enums import Triggers, CardTypes, ValueTypes, Zones, Factions, PlayerIndicators, Abilities
+from enums import Triggers, CardTypes, ValueTypes, Zones, Factions, Abilities
 from move import PlayCard, ActivateBase, ActivateAlly, ActivateScrap, BuyCard, EndTurn, Attack, Choose, Scrap
 
 
@@ -8,7 +8,7 @@ class Strategy(object):
     @classmethod
     def _get_play_all_cards_moves(cls, gamestate):
         moves = []
-        for card in gamestate[PlayerIndicators.ACTIVE][Zones.HAND]:
+        for card in gamestate.active_player[Zones.HAND]:
             moves.append(PlayCard(card))
             if card.card_type == CardTypes.SHIP:
                 abilities = card.abilities[Triggers.SHIP]
@@ -40,7 +40,7 @@ class Strategy(object):
 
         elif len(scrap_effect.zones) == 2:  # Hacky, but catches everything except blobs and machine base
             scout_to_scrap = None
-            for d_card in gamestate[PlayerIndicators.ACTIVE][Zones.DISCARD]:
+            for d_card in gamestate.active_player[Zones.DISCARD]:
                 if isinstance(d_card, Viper):
                     return d_card
                 elif not scout_to_scrap and isinstance(d_card, Scout):
@@ -49,7 +49,7 @@ class Strategy(object):
                 if scout_to_scrap:
                     return scout_to_scrap
                 else:
-                    for h_card in gamestate[PlayerIndicators.ACTIVE][Zones.HAND]:
+                    for h_card in gamestate.active_player[Zones.HAND]:
                         if isinstance(h_card, Viper):
                             return h_card
         else:
@@ -58,7 +58,7 @@ class Strategy(object):
 
     @classmethod
     def _get_attack_move(cls, gamestate, target_base=None):
-        return [Attack(target_base if target_base else gamestate[PlayerIndicators.INACTIVE])]
+        return [Attack(target_base if target_base else gamestate.opponent)]
 
     @classmethod
     def _get_end_turn_move(cls):
@@ -86,21 +86,21 @@ class Strategy(object):
         for card in cards_by_cost:
             if faction is not None and faction != card.faction:
                 continue
-            if gamestate[PlayerIndicators.ACTIVE][ValueTypes.TRADE] >= card.cost:
+            if gamestate.active_player[ValueTypes.TRADE] >= card.cost:
                 return [BuyCard(card)]
 
     @classmethod
     def _get_attack_all_outposts_moves(cls, gamestate):
         moves = []
-        for card in gamestate[PlayerIndicators.INACTIVE][Zones.IN_PLAY]:
+        for card in gamestate.opponent[Zones.IN_PLAY]:
             if card.card_type == CardTypes.OUTPOST:
                 moves.append(Attack(card))
         return moves
 
     @classmethod
     def _get_damage_required_to_win(cls, gamestate):
-        damage = gamestate[PlayerIndicators.INACTIVE][ValueTypes.AUTHORITY]
-        for card in gamestate[PlayerIndicators.INACTIVE][Zones.IN_PLAY]:
+        damage = gamestate.opponent[ValueTypes.AUTHORITY]
+        for card in gamestate.opponent[Zones.IN_PLAY]:
             if card.card_type == CardTypes.OUTPOST:
                 damage += card.defense
         return damage
@@ -108,7 +108,7 @@ class Strategy(object):
     @classmethod
     def _get_total_available_scrap_damage(cls, gamestate):
         total = 0
-        for card in gamestate[PlayerIndicators.ACTIVE][Zones.IN_PLAY]:
+        for card in gamestate.active_player[Zones.IN_PLAY]:
             scrap_ability = card.abilities.get(Triggers.SCRAP, {})
             total += scrap_ability.get(ValueTypes.DAMAGE, 0)
         return total
@@ -116,7 +116,7 @@ class Strategy(object):
     @classmethod
     def _get_scrap_all_cards_for_damage_moves(cls, gamestate):
         scrap_moves = []
-        for card in gamestate[PlayerIndicators.ACTIVE][Zones.IN_PLAY]:
+        for card in gamestate.active_player[Zones.IN_PLAY]:
             scrap_ability = card.abilities.get(Triggers.SCRAP, {})
             if scrap_ability.get(ValueTypes.DAMAGE) is not None:
                 scrap_moves.append(ActivateScrap(card))
@@ -125,7 +125,7 @@ class Strategy(object):
     @classmethod
     def _get_activate_all_ally_abilities(cls, gamestate):
         moves = []
-        active_player = gamestate[PlayerIndicators.ACTIVE]
+        active_player = gamestate.active_player
         for card in active_player[Zones.IN_PLAY]:
             if Triggers.ALLY in card.available_abilities and active_player.active_factions[card.faction] > 1:
                 moves.append(ActivateAlly(card))
@@ -156,12 +156,12 @@ class FactionStrategy(Strategy):
         self.faction = faction
 
     def get_moves(self, gamestate):
-        playerstate = gamestate[PlayerIndicators.ACTIVE]
+        playerstate = gamestate.active_player
 
         # If we have to Scrap (because of Machine Base), do it
         if gamestate.pending_scrap and gamestate.pending_scrap.mandatory:
-            if gamestate[PlayerIndicators.ACTIVE][Zones.HAND]:
-                return [Scrap(gamestate[PlayerIndicators.ACTIVE][Zones.HAND][0])]
+            if gamestate.active_player[Zones.HAND]:
+                return [Scrap(gamestate.active_player[Zones.HAND][0])]
 
         # If we have any ships with scrap abilities, play them
         scrap_ships = [card for card in playerstate[Zones.HAND]
@@ -208,7 +208,7 @@ class FactionStrategy(Strategy):
 
         # If we can't win and there's an outpost, destroy it; or destroy a base; or attack the opponent
         if current_damage > 0:
-            bases = gamestate[PlayerIndicators.INACTIVE][Zones.IN_PLAY]
+            bases = gamestate.opponent[Zones.IN_PLAY]
             if bases:
                 outposts = [b for b in bases if b.card_type == CardTypes.OUTPOST]
                 if outposts:
@@ -224,7 +224,7 @@ class FactionStrategy(Strategy):
 
 class SplurgeStrategy(Strategy):
     def get_moves(self, gamestate):
-        playerstate = gamestate[PlayerIndicators.ACTIVE]
+        playerstate = gamestate.active_player
 
         # If we have cards, play them
         if playerstate[Zones.HAND]:
@@ -256,7 +256,7 @@ class ExplorerStrategy(Strategy):
         self.authority_to_explorer_ratio_to_ignore_minimum = ratio
 
     def get_moves(self, gamestate):
-        playerstate = gamestate[PlayerIndicators.ACTIVE]
+        playerstate = gamestate.active_player
 
         # If we have cards, play them
         if playerstate[Zones.HAND]:
@@ -271,7 +271,7 @@ class ExplorerStrategy(Strategy):
 
         # If we aren't buying, scrap?
         if owned_explorers:
-            ratio = gamestate[PlayerIndicators.INACTIVE].values[ValueTypes.AUTHORITY] / owned_explorers
+            ratio = gamestate.opponent.values[ValueTypes.AUTHORITY] / owned_explorers
             if owned_explorers >= self.minimum_explorers\
                     or ratio < self.authority_to_explorer_ratio_to_ignore_minimum:
                 number_to_scrap = playerstate[Zones.IN_PLAY].count(Explorer)

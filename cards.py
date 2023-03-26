@@ -1,7 +1,12 @@
 import logging
 
 from effects import ValueEffect, DrawEffect, ChoiceEffect, ScrapEffect
-from enums import Abilities, Triggers, CardTypes, Factions, ValueTypes, PlayerIndicators, Zones
+from enums import Abilities, Triggers, CardTypes, Factions, ValueTypes, Zones
+
+
+DRAW_ONE = DrawEffect(1)
+SCRAP_FROM_TRADE_ROW = ScrapEffect(Zones.TRADE_ROW)
+SCRAP_FROM_HAND_OR_DISCARD = ScrapEffect(Zones.HAND, Zones.DISCARD)
 
 
 class Card(object):
@@ -26,14 +31,14 @@ class Card(object):
         effects = []
         for k, v in effects_data.items():
             if isinstance(k, ValueTypes):
-                effects.append(ValueEffect(PlayerIndicators.ACTIVE, k, v))
+                effects.append(ValueEffect(k, v))
             elif k == Abilities.DRAW:
-                effects.append(DrawEffect(PlayerIndicators.ACTIVE, v))
+                effects.append(v)
             elif k == Abilities.SCRAP:
-                effects.append(ScrapEffect(PlayerIndicators.ACTIVE, v))
+                effects.append(v)
             elif k == Abilities.CHOICE:
-                choices = {ck: ValueEffect(PlayerIndicators.ACTIVE, ck, cv) for ck, cv in v.items()}
-                effects.append(ChoiceEffect(PlayerIndicators.ACTIVE, choices))
+                choices = {ck: ValueEffect(ck, cv) for ck, cv in v.items()}
+                effects.append(ChoiceEffect(choices))
             else:
                 logging.warning("Ignoring ability - {}: {}".format(k, v))
         return effects
@@ -97,7 +102,7 @@ class BlobFighter(Card):
             ValueTypes.DAMAGE: 3
         },
         Triggers.ALLY: {
-            Abilities.DRAW: 1
+            Abilities.DRAW: DRAW_ONE
         }
     }
 
@@ -125,7 +130,7 @@ class BattlePod(Card):
     abilities = {
         Triggers.SHIP: {
             ValueTypes.DAMAGE: 4,
-            Abilities.SCRAP: ScrapEffect.Parameters(Zones.TRADE_ROW)
+            Abilities.SCRAP: SCRAP_FROM_TRADE_ROW
         },
         Triggers.ALLY: {
             ValueTypes.DAMAGE: 2
@@ -162,7 +167,7 @@ class BlobDestroyer(Card):
         },
         Triggers.ALLY: {
             Abilities.UNIMPLEMENTED: "Blow Base",
-            Abilities.SCRAP: ScrapEffect.Parameters(Zones.TRADE_ROW)
+            Abilities.SCRAP: SCRAP_FROM_TRADE_ROW
         }
     }
 
@@ -192,7 +197,7 @@ class BattleBlob(Card):
             ValueTypes.DAMAGE: 8
         },
         Triggers.ALLY: {
-            Abilities.DRAW: 1
+            Abilities.DRAW: DRAW_ONE
         },
         Triggers.SCRAP: {
             ValueTypes.DAMAGE: 4
@@ -208,10 +213,10 @@ class Mothership(Card):
     abilities = {
         Triggers.SHIP: {
             ValueTypes.DAMAGE: 6,
-            Abilities.DRAW: 1
+            Abilities.DRAW: DRAW_ONE
         },
         Triggers.ALLY: {
-            Abilities.DRAW: 1
+            Abilities.DRAW: DRAW_ONE
         }
     }
 
@@ -244,7 +249,7 @@ class TheHive(Card):
             ValueTypes.DAMAGE: 3,
         },
         Triggers.ALLY: {
-            Abilities.DRAW: 1
+            Abilities.DRAW: DRAW_ONE
         }
     }
 
@@ -334,7 +339,7 @@ class TradeEscort(Card):
             ValueTypes.DAMAGE: 4,
         },
         Triggers.ALLY: {
-            Abilities.DRAW: 1
+            Abilities.DRAW: DRAW_ONE
         }
     }
 
@@ -347,7 +352,7 @@ class Flagship(Card):
     abilities = {
         Triggers.SHIP: {
             ValueTypes.DAMAGE: 5,
-            Abilities.DRAW: 1
+            Abilities.DRAW: DRAW_ONE
         },
         Triggers.ALLY: {
             ValueTypes.AUTHORITY: 5,
@@ -364,7 +369,7 @@ class CommandShip(Card):
         Triggers.SHIP: {
             ValueTypes.AUTHORITY: 4,
             ValueTypes.DAMAGE: 5,
-            Abilities.DRAW: 2
+            Abilities.DRAW: DrawEffect(2)
         },
         Triggers.ALLY: {
             Abilities.UNIMPLEMENTED: "Blow Base"
@@ -441,7 +446,7 @@ class PortOfCall(Card):
             ValueTypes.TRADE: 3
         },
         Triggers.SCRAP: {
-            Abilities.DRAW: 1,
+            Abilities.DRAW: DRAW_ONE,
             Abilities.UNIMPLEMENTED: "Blow Base"
         }
     }
@@ -459,7 +464,7 @@ class CentralOffice(Card):
             Abilities.UNIMPLEMENTED: "Freighter"
         },
         Triggers.ALLY: {
-            Abilities.DRAW: 1
+            Abilities.DRAW: DRAW_ONE
         }
     }
 
@@ -473,7 +478,7 @@ class TradeBot(Card):
     abilities = {
         Triggers.SHIP: {
             ValueTypes.TRADE: 1,
-            Abilities.SCRAP: ScrapEffect.Parameters(Zones.HAND, Zones.DISCARD)
+            Abilities.SCRAP: SCRAP_FROM_HAND_OR_DISCARD
         },
         Triggers.ALLY: {
             ValueTypes.DAMAGE: 2,
@@ -489,7 +494,7 @@ class MissileBot(Card):
     abilities = {
         Triggers.SHIP: {
             ValueTypes.DAMAGE: 2,
-            Abilities.SCRAP: ScrapEffect.Parameters(Zones.HAND, Zones.DISCARD)
+            Abilities.SCRAP: SCRAP_FROM_HAND_OR_DISCARD
         },
         Triggers.ALLY: {
             ValueTypes.DAMAGE: 2,
@@ -505,7 +510,7 @@ class SupplyBot(Card):
     abilities = {
         Triggers.SHIP: {
             ValueTypes.TRADE: 2,
-            Abilities.SCRAP: ScrapEffect.Parameters(Zones.HAND, Zones.DISCARD)
+            Abilities.SCRAP: SCRAP_FROM_HAND_OR_DISCARD
         },
         Triggers.ALLY: {
             ValueTypes.DAMAGE: 2,
@@ -526,7 +531,7 @@ class PatrolMech(Card):
             }
         },
         Triggers.ALLY: {
-            Abilities.SCRAP: ScrapEffect.Parameters(Zones.HAND, Zones.DISCARD)
+            Abilities.SCRAP: SCRAP_FROM_HAND_OR_DISCARD
         }
     }
 
@@ -551,10 +556,10 @@ class BattleMech(Card):
     abilities = {
         Triggers.SHIP: {
             ValueTypes.DAMAGE: 4,
-            Abilities.SCRAP: ScrapEffect.Parameters(Zones.HAND, Zones.DISCARD)
+            Abilities.SCRAP: SCRAP_FROM_HAND_OR_DISCARD
         },
         Triggers.ALLY: {
-            Abilities.DRAW: 1
+            Abilities.DRAW: DRAW_ONE
         }
     }
 
@@ -570,7 +575,7 @@ class MissileMech(Card):
             Abilities.UNIMPLEMENTED: "Blow Base"
         },
         Triggers.ALLY: {
-            Abilities.DRAW: 1
+            Abilities.DRAW: DRAW_ONE
         }
     }
 
@@ -610,7 +615,7 @@ class Junkyard(Card):
     defense = 5
     abilities = {
         Triggers.BASE: {
-            Abilities.SCRAP: ScrapEffect.Parameters(Zones.HAND, Zones.DISCARD)
+            Abilities.SCRAP: SCRAP_FROM_HAND_OR_DISCARD
         }
     }
 
@@ -623,8 +628,8 @@ class MachineBase(Card):
     defense = 6
     abilities = {
         Triggers.BASE: {
-            Abilities.DRAW: 1,
-            Abilities.SCRAP: ScrapEffect.Parameters(Zones.HAND, mandatory=True)
+            Abilities.DRAW: DRAW_ONE,
+            Abilities.SCRAP: ScrapEffect(Zones.HAND, mandatory=True)
         }
     }
 
@@ -667,7 +672,7 @@ class Corvette(Card):
     abilities = {
         Triggers.SHIP: {
             ValueTypes.DAMAGE: 1,
-            Abilities.DRAW: 1
+            Abilities.DRAW: DRAW_ONE
         },
         Triggers.ALLY: {
             ValueTypes.DAMAGE: 2,
@@ -683,7 +688,7 @@ class SurveyShip(Card):
     abilities = {
         Triggers.SHIP: {
             ValueTypes.TRADE: 3,
-            Abilities.DRAW: 1
+            Abilities.DRAW: DRAW_ONE
         },
         Triggers.SCRAP: {
             Abilities.UNIMPLEMENTED: "Discard"
@@ -705,7 +710,7 @@ class ImperialFrigate(Card):
             ValueTypes.DAMAGE: 2,
         },
         Triggers.SCRAP: {
-            Abilities.DRAW: 1
+            Abilities.DRAW: DRAW_ONE
         }
 
     }
@@ -719,7 +724,7 @@ class BattleCruiser(Card):
     abilities = {
         Triggers.SHIP: {
             ValueTypes.DAMAGE: 6,
-            Abilities.DRAW: 1
+            Abilities.DRAW: DRAW_ONE
         },
         Triggers.ALLY: {
             Abilities.UNIMPLEMENTED: "Discard"
@@ -738,7 +743,7 @@ class Dreadnought(Card):
     abilities = {
         Triggers.SHIP: {
             ValueTypes.DAMAGE: 7,
-            Abilities.DRAW: 1
+            Abilities.DRAW: DRAW_ONE
         },
         Triggers.SCRAP: {
             ValueTypes.DAMAGE: 5,

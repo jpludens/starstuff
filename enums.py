@@ -41,8 +41,3 @@ class Abilities(Enum):
     SCRAP = "SCRAP"
     CHOICE = "CHOICE"
     UNIMPLEMENTED = "UNIMPLEMENTED"
-
-
-class PlayerIndicators(Enum):
-    ACTIVE = "ACTIVE"
-    INACTIVE = "INACTIVE"
