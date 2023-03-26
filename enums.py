@@ -38,7 +38,8 @@ class Factions(Enum):
 
 class Abilities(Enum):
     DRAW = "DRAW"
-    CHOICE = "CHOICE"
+    SCRAP = "SCRAP"
+    CHOICE = "CHOICE"  # TODO: Should this be an 'ability' or something else instead?
     UNIMPLEMENTED = "UNIMPLEMENTED"
 
 

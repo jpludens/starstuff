@@ -1,7 +1,7 @@
 from random import choice
-from cards import Explorer
+from cards import Explorer, Viper, Scout, MachineBase
 from enums import Triggers, CardTypes, ValueTypes, Zones, Factions, PlayerIndicators, Abilities
-from move import PlayCard, ActivateBase, AllyAbility, ScrapAbility, BuyCard, EndTurn, Attack, Choose
+from move import PlayCard, ActivateBase, ActivateAlly, ActivateScrap, BuyCard, EndTurn, Attack, Choose, Scrap
 
 
 class Strategy(object):
@@ -10,10 +10,51 @@ class Strategy(object):
         moves = []
         for card in gamestate[PlayerIndicators.ACTIVE][Zones.HAND]:
             moves.append(PlayCard(card))
-            if card.card_type == CardTypes.SHIP and Abilities.CHOICE in card.abilities[Triggers.SHIP]:
-                chosen_choice = choice(list(card.abilities[Triggers.SHIP][Abilities.CHOICE].keys()))
-                moves.append(Choose(chosen_choice))
+            if card.card_type == CardTypes.SHIP:
+                abilities = card.abilities[Triggers.SHIP]
+                if Abilities.CHOICE in abilities:
+                    chosen_choice = choice(list(card.abilities[Triggers.SHIP][Abilities.CHOICE].keys()))
+                    moves.append(Choose(chosen_choice))
+                if Abilities.SCRAP in abilities:
+                    raise RuntimeError  # Scrap cards should be getting played individually
         return moves
+
+    @classmethod
+    def _get_play_scrap_ship_moves(cls, gamestate, card, effect):
+        cards_in_zones = sum([len(gamestate[z]) for z in effect.zones])
+        # At least 1 card in trade row, or at least 2 cards across hand/discard,
+        # because the card being played right now is also in hand and won't be a valid target!
+        if Zones.TRADE_ROW in effect.zones and cards_in_zones or cards_in_zones > 1:
+            card_to_scrap = cls._get_card_to_scrap(gamestate, effect)
+            if card_to_scrap:
+                return [PlayCard(card), Scrap(card_to_scrap)]
+            else:
+                return [PlayCard(card), Scrap()]
+        else:
+            return [PlayCard(card)]
+
+    @classmethod
+    def _get_card_to_scrap(cls, gamestate, scrap_effect):
+        if Zones.TRADE_ROW in scrap_effect.zones:
+            return choice(gamestate[Zones.TRADE_ROW])
+
+        elif len(scrap_effect.zones) == 2:  # Hacky, but catches everything except blobs and machine base
+            scout_to_scrap = None
+            for d_card in gamestate[PlayerIndicators.ACTIVE][Zones.DISCARD]:
+                if isinstance(d_card, Viper):
+                    return d_card
+                elif not scout_to_scrap and isinstance(d_card, Scout):
+                    scout_to_scrap = d_card
+            else:
+                if scout_to_scrap:
+                    return scout_to_scrap
+                else:
+                    for h_card in gamestate[PlayerIndicators.ACTIVE][Zones.HAND]:
+                        if isinstance(h_card, Viper):
+                            return h_card
+        else:
+            # Machine Base case - currently handled in get_moves
+            return None
 
     @classmethod
     def _get_attack_move(cls, gamestate, target_base=None):
@@ -24,10 +65,19 @@ class Strategy(object):
         return [EndTurn()]
 
     @classmethod
-    def _get_activate_base_move(cls, card):
+    def _get_activate_base_move(cls, gamestate, card):
         if Abilities.CHOICE in card.abilities[Triggers.BASE]:
             chosen_choice = choice(list(card.abilities[Triggers.BASE][Abilities.CHOICE].keys()))
             return [ActivateBase(card), Choose(chosen_choice)]
+        if Abilities.SCRAP in card.abilities[Triggers.BASE]:
+            if not isinstance(card, MachineBase):  # Handled at top level because the DRAW provides more info/options
+                scrap_effect = card.abilities[Triggers.BASE][Abilities.SCRAP]
+                # Only include a scrap move if there's anything available to scrap
+                if any([gamestate[z] for z in scrap_effect.zones]):
+                    scrap_card = cls._get_card_to_scrap(gamestate, scrap_effect)
+                    return [ActivateBase(card), Scrap(scrap_card) if scrap_card else Scrap()]
+                else:
+                    pass
         return [ActivateBase(card)]
 
     @classmethod
@@ -69,7 +119,7 @@ class Strategy(object):
         for card in gamestate[PlayerIndicators.ACTIVE][Zones.IN_PLAY]:
             scrap_ability = card.abilities.get(Triggers.SCRAP, {})
             if scrap_ability.get(ValueTypes.DAMAGE) is not None:
-                scrap_moves.append(ScrapAbility(card))
+                scrap_moves.append(ActivateScrap(card))
         return scrap_moves
 
     @classmethod
@@ -78,7 +128,7 @@ class Strategy(object):
         active_player = gamestate[PlayerIndicators.ACTIVE]
         for card in active_player[Zones.IN_PLAY]:
             if Triggers.ALLY in card.available_abilities and active_player.active_factions[card.faction] > 1:
-                moves.append(AllyAbility(card))
+                moves.append(ActivateAlly(card))
         return moves
 
 
@@ -108,6 +158,19 @@ class FactionStrategy(Strategy):
     def get_moves(self, gamestate):
         playerstate = gamestate[PlayerIndicators.ACTIVE]
 
+        # If we have to Scrap (because of Machine Base), do it
+        if gamestate.pending_scrap and gamestate.pending_scrap.mandatory:
+            if gamestate[PlayerIndicators.ACTIVE][Zones.HAND]:
+                return [Scrap(gamestate[PlayerIndicators.ACTIVE][Zones.HAND][0])]
+
+        # If we have any ships with scrap abilities, play them
+        scrap_ships = [card for card in playerstate[Zones.HAND]
+                       if card.abilities.get(Triggers.SHIP, {}).get(Abilities.SCRAP)]
+        if scrap_ships:
+            return self._get_play_scrap_ship_moves(gamestate,
+                                                   scrap_ships[0],
+                                                   scrap_ships[0].abilities[Triggers.SHIP][Abilities.SCRAP])
+
         # If we have cards, play them
         if playerstate[Zones.HAND]:
             return self._get_play_all_cards_moves(gamestate)
@@ -115,7 +178,7 @@ class FactionStrategy(Strategy):
         # If we have bases, activate them
         for card in playerstate[Zones.IN_PLAY]:
             if card.is_base() and Triggers.BASE in card.available_abilities:
-                return self._get_activate_base_move(card)
+                return self._get_activate_base_move(gamestate, card)
 
         # If we have ally abilities available, activate them
         ally_moves = self._get_activate_all_ally_abilities(gamestate)

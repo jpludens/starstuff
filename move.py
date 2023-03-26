@@ -1,7 +1,6 @@
 import logging
 
 from cards import Explorer, Card
-from effects import ValueEffect
 from enums import Zones, CardTypes, Triggers, ValueTypes, PlayerIndicators
 from util import move_list_item
 
@@ -11,6 +10,8 @@ class Move(object):
         raise NotImplementedError
 
 
+# TODO: Add a 'choice' parameter to execute
+# TODO: abstract common Moves behavior to a CardMove or something
 class PlayCard(Move):
     def __init__(self, card):
         self.card = card
@@ -38,7 +39,7 @@ class ActivateBase(Move):
             effect.apply(gamestate)
 
 
-class AllyAbility(Move):
+class ActivateAlly(Move):
     def __init__(self, card):
         self.card = card
 
@@ -49,7 +50,7 @@ class AllyAbility(Move):
             effect.apply(gamestate)
 
 
-class ScrapAbility(Move):
+class ActivateScrap(Move):
     def __init__(self, card):
         self.card = card
 
@@ -124,19 +125,23 @@ class Choose(Move):
         self.choice = choice
 
     def execute(self, gamestate):
-        value = gamestate.pending_choice[self.choice]
-        logging.warning("{} is CHOOSING {} {}".format(gamestate[PlayerIndicators.ACTIVE].name, value, self.choice.name))
-        effect = ValueEffect(PlayerIndicators.ACTIVE, self.choice, value)
-        effect.apply(gamestate)
-        gamestate.pending_choice = None
-
-
-class Target(Move):
-    def execute(self, gamestate):
-        pass
+        logging.warning("{} is CHOOSING {}".format(gamestate[PlayerIndicators.ACTIVE].name, self.choice.name))
+        gamestate.pending_choice.resolve(self.choice)
 
 
 class Scrap(Move):
+    def __init__(self, *targets):
+        self.targets = targets
+
+    def execute(self, gamestate):
+        if gamestate.pending_scrap is None:
+            logging.error("Scrap Move provided without pending Scrap Effect"
+                          " or when a Scrap Effect has no possible targets")
+            raise RuntimeError
+        gamestate.pending_scrap.resolve(self.targets)
+
+
+class Target(Move):
     def execute(self, gamestate):
         pass
 

@@ -16,9 +16,13 @@ class PlayerState(object):
             ValueTypes.DAMAGE: 0
         }
 
-        # noinspection PyTypeChecker
+        deck = []
+        for _ in range(8):
+            deck.append(Scout())
+        for _ in range(2):
+            deck.append(Viper())
         self.zones = {
-            Zones.DECK: [Scout()] * 8 + [Viper()] * 2,
+            Zones.DECK: deck,
             Zones.HAND: [],
             Zones.IN_PLAY: [],
             Zones.DISCARD: []
@@ -30,11 +34,11 @@ class PlayerState(object):
         self.draw(3 if first_player else 5)
 
     # Allow dict-style access to values and zones
-    def __getitem__(self, item):
+    def __getitem__(self, key):
         try:
-            return self.values[item]
+            return self.values[key]
         except KeyError:
-            return self.zones[item]
+            return self.zones[key]
 
     # Allow dict-style access to values and zones
     def __setitem__(self, key, value):
@@ -56,10 +60,7 @@ class PlayerState(object):
                 card = self[Zones.DECK].pop(0)
             except IndexError:
                 self.shuffle_deck()
-                try:
-                    card = self[Zones.DECK].pop(0)
-                except IndexError:
-                    return
+                card = self[Zones.DECK].pop(0)
             self[Zones.HAND].append(card)
 
     def start_turn(self):
@@ -79,7 +80,10 @@ class PlayerState(object):
         for ship in ships:
             move_list_item(ship, self[Zones.IN_PLAY], self[Zones.DISCARD])
 
-        self.draw(5)
+        try:
+            self.draw(5)
+        except IndexError:
+            assert len(self[Zones.DECK]) + len(self[Zones.DISCARD]) == 0
 
     def destroy_base(self, base):
         base.deinitialize_from_play()

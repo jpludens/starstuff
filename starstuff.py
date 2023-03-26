@@ -1,9 +1,6 @@
-# Goal: YAR Yet Another Refactor in advance of remaining abilities
-#    Keep Gamestate and Playerstate very dumb and mechanical, move all simplification logic to the strategy layer
-#    Every single piece of information required from players constitutes an entire Move
-#    So, Gamestate will activate played ships, but if they require a choice (Patrol Mech),
-#       state execution halts and a new move is requested. Same with, say, activating Barter World
-
+# Goal: Get Recycling Station implement since it's the most involved
+# (requires a choice, then targets, then has knock-on effects)
+# First, get Machine Cult scrap and Star Empire discard working
 
 # Goal: Implement remaining abilities
 #    Mech World
@@ -20,6 +17,7 @@
 #         Scrap move with targets
 #    Scrap / Junkyard
 #      Machine Base
+#         MUST scrap
 #      Brain World
 #    Blob World
 #          gamestate needs to keep an examinable log of turn actions to be searched for Actions.PLAY/Factions.BLOB
@@ -59,7 +57,7 @@ def play_game():
 
     strategies = {
         player_1: FactionStrategy(Factions.BLOB),
-        player_2: FactionStrategy(Factions.TRADE_FEDERATION)}
+        player_2: FactionStrategy(Factions.MACHINE_CULT)}
 
     gamestate = GameState(player_1, player_2)
     while True:

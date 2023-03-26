@@ -1,7 +1,7 @@
 import logging
 
-from effects import ValueEffect, DrawEffect, ChoiceEffect
-from enums import Abilities, Triggers, CardTypes, Factions, ValueTypes, PlayerIndicators
+from effects import ValueEffect, DrawEffect, ChoiceEffect, ScrapEffect
+from enums import Abilities, Triggers, CardTypes, Factions, ValueTypes, PlayerIndicators, Zones
 
 
 class Card(object):
@@ -29,8 +29,11 @@ class Card(object):
                 effects.append(ValueEffect(PlayerIndicators.ACTIVE, k, v))
             elif k == Abilities.DRAW:
                 effects.append(DrawEffect(PlayerIndicators.ACTIVE, v))
+            elif k == Abilities.SCRAP:
+                effects.append(ScrapEffect(PlayerIndicators.ACTIVE, v))
             elif k == Abilities.CHOICE:
-                effects.append(ChoiceEffect(PlayerIndicators.ACTIVE, v))
+                choices = {ck: ValueEffect(PlayerIndicators.ACTIVE, ck, cv) for ck, cv in v.items()}
+                effects.append(ChoiceEffect(PlayerIndicators.ACTIVE, choices))
             else:
                 logging.warning("Ignoring ability - {}: {}".format(k, v))
         return effects
@@ -122,7 +125,7 @@ class BattlePod(Card):
     abilities = {
         Triggers.SHIP: {
             ValueTypes.DAMAGE: 4,
-            Abilities.UNIMPLEMENTED: "Scrap Trade"
+            Abilities.SCRAP: ScrapEffect.Parameters(Zones.TRADE_ROW)
         },
         Triggers.ALLY: {
             ValueTypes.DAMAGE: 2
@@ -158,7 +161,8 @@ class BlobDestroyer(Card):
             ValueTypes.DAMAGE: 6
         },
         Triggers.ALLY: {
-            Abilities.UNIMPLEMENTED: "Blow Base and/or Scrap Trade"
+            Abilities.UNIMPLEMENTED: "Blow Base",
+            Abilities.SCRAP: ScrapEffect.Parameters(Zones.TRADE_ROW)
         }
     }
 
@@ -469,7 +473,7 @@ class TradeBot(Card):
     abilities = {
         Triggers.SHIP: {
             ValueTypes.TRADE: 1,
-            Abilities.UNIMPLEMENTED: Triggers.SCRAP
+            Abilities.SCRAP: ScrapEffect.Parameters(Zones.HAND, Zones.DISCARD)
         },
         Triggers.ALLY: {
             ValueTypes.DAMAGE: 2,
@@ -485,7 +489,7 @@ class MissileBot(Card):
     abilities = {
         Triggers.SHIP: {
             ValueTypes.DAMAGE: 2,
-            Abilities.UNIMPLEMENTED: Triggers.SCRAP
+            Abilities.SCRAP: ScrapEffect.Parameters(Zones.HAND, Zones.DISCARD)
         },
         Triggers.ALLY: {
             ValueTypes.DAMAGE: 2,
@@ -501,7 +505,7 @@ class SupplyBot(Card):
     abilities = {
         Triggers.SHIP: {
             ValueTypes.TRADE: 2,
-            Abilities.UNIMPLEMENTED: Triggers.SCRAP
+            Abilities.SCRAP: ScrapEffect.Parameters(Zones.HAND, Zones.DISCARD)
         },
         Triggers.ALLY: {
             ValueTypes.DAMAGE: 2,
@@ -522,7 +526,7 @@ class PatrolMech(Card):
             }
         },
         Triggers.ALLY: {
-            Abilities.UNIMPLEMENTED: Triggers.SCRAP
+            Abilities.SCRAP: ScrapEffect.Parameters(Zones.HAND, Zones.DISCARD)
         }
     }
 
@@ -547,7 +551,7 @@ class BattleMech(Card):
     abilities = {
         Triggers.SHIP: {
             ValueTypes.DAMAGE: 4,
-            Abilities.UNIMPLEMENTED: Triggers.SCRAP
+            Abilities.SCRAP: ScrapEffect.Parameters(Zones.HAND, Zones.DISCARD)
         },
         Triggers.ALLY: {
             Abilities.DRAW: 1
@@ -566,9 +570,6 @@ class MissileMech(Card):
             Abilities.UNIMPLEMENTED: "Blow Base"
         },
         Triggers.ALLY: {
-            ValueTypes.AUTHORITY: 0,
-            ValueTypes.TRADE: 2,
-            ValueTypes.DAMAGE: 0,
             Abilities.DRAW: 1
         }
     }
@@ -609,7 +610,7 @@ class Junkyard(Card):
     defense = 5
     abilities = {
         Triggers.BASE: {
-            Abilities.UNIMPLEMENTED: Triggers.SCRAP
+            Abilities.SCRAP: ScrapEffect.Parameters(Zones.HAND, Zones.DISCARD)
         }
     }
 
@@ -617,12 +618,13 @@ class Junkyard(Card):
 class MachineBase(Card):
     card_type = CardTypes.OUTPOST
     faction = Factions.MACHINE_CULT
-    name = "MachineBase"
+    name = "Machine Base"
     cost = 7
     defense = 6
     abilities = {
         Triggers.BASE: {
-            Abilities.UNIMPLEMENTED: "Machine Base"
+            Abilities.DRAW: 1,
+            Abilities.SCRAP: ScrapEffect.Parameters(Zones.HAND, mandatory=True)
         }
     }
 
