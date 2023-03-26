@@ -48,6 +48,7 @@ class ScrapEffect(Effect):
             self.mandatory = mandatory
 
     def __init__(self, player_indicator, parameters):
+        # card.move_from(Zones.TRADE_ROW).to(Zones.DISCARD)
         super().__init__(player_indicator)
         self.player_indicator = player_indicator
         self.zones = parameters.zones
@@ -84,8 +85,6 @@ class ScrapEffect(Effect):
                             self.gamestate[self.player_indicator].name,
                             target.name,
                             zone.name if not isinstance(zone, tuple) else zone[1].name))
-                        # TODO: Make the Trade Row an object that can handle this by itself,
-                        # the act of scrapping shouldn't involve checking and filling the trade row
                         if zone == Zones.TRADE_ROW:
                             self.gamestate.fill_trade_row()
                         break

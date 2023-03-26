@@ -10,10 +10,28 @@ class Move(object):
         raise NotImplementedError
 
 
-# TODO: Add a 'choice' parameter to execute
-# TODO: abstract common Moves behavior to a CardMove or something
-class PlayCard(Move):
+class AbilityActivation(Move):
+    def __init__(self, card, trigger):
+        self.card = card
+        self.trigger = trigger
+
+    def execute(self, gamestate):
+        self.activate_ability(gamestate)
+
+    def activate_ability(self, gamestate):
+        if self.trigger in [Triggers.SHIP, Triggers.BASE]:
+            ability_text = "PRIMARY"
+        else:
+            ability_text = self.trigger.name
+
+        logging.warning("Activating {}'s {} ability".format(self.card.name, ability_text))
+        for effect in self.card.trigger_ability(self.trigger):
+            effect.apply(gamestate)
+
+
+class PlayCard(AbilityActivation):
     def __init__(self, card):
+        super().__init__(card, Triggers.SHIP)
         self.card = card
 
     def execute(self, gamestate):
@@ -25,41 +43,30 @@ class PlayCard(Move):
 
         gamestate[PlayerIndicators.ACTIVE].active_factions.update(self.card.active_factions)
         if self.card.card_type == CardTypes.SHIP:
-            for effect in self.card.trigger_ability(Triggers.SHIP):
-                effect.apply(gamestate)
+            self.activate_ability(gamestate)
 
 
-class ActivateBase(Move):
+class ActivateBase(AbilityActivation):
     def __init__(self, card):
+        super().__init__(card, Triggers.BASE)
+        self.card = card
+
+
+class ActivateAlly(AbilityActivation):
+    def __init__(self, card):
+        super().__init__(card, Triggers.ALLY)
+        self.card = card
+
+
+class ActivateScrap(AbilityActivation):
+    def __init__(self, card):
+        super().__init__(card, Triggers.SCRAP)
         self.card = card
 
     def execute(self, gamestate):
-        logging.warning("{} is ACTIVATING: {}".format(gamestate[PlayerIndicators.ACTIVE].name, self.card.name))
-        for effect in self.card.trigger_ability(Triggers.BASE):
-            effect.apply(gamestate)
-
-
-class ActivateAlly(Move):
-    def __init__(self, card):
-        self.card = card
-
-    def execute(self, gamestate):
-        logging.warning("{} is TRIGGERING {}'s Ally Ability".format(
-            gamestate[PlayerIndicators.ACTIVE].name, self.card.name))
-        for effect in self.card.trigger_ability(Triggers.ALLY):
-            effect.apply(gamestate)
-
-
-class ActivateScrap(Move):
-    def __init__(self, card):
-        self.card = card
-
-    def execute(self, gamestate):
-        logging.warning("{} is SCRAPPING: {}".format(gamestate[PlayerIndicators.ACTIVE].name, self.card.name))
         gamestate[PlayerIndicators.ACTIVE][Zones.IN_PLAY].remove(self.card)
         gamestate[PlayerIndicators.ACTIVE].active_factions.subtract(self.card.active_factions)
-        for effect in self.card.trigger_ability(Triggers.SCRAP):
-            effect.apply(gamestate)
+        self.activate_ability(gamestate)
 
 
 class BuyCard(Move):
