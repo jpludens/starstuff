@@ -48,7 +48,7 @@ class ScrapEffect(Effect):
 
     def apply(self, gamestate):
         self.gamestate = gamestate
-        zone_names = [z.name if not isinstance(z, tuple) else z[1].name for z in self.zones]
+        zone_names = [z.name for z in self.zones]
         if any([gamestate[z] for z in self.zones]):
             gamestate.pending_scrap = self
             logging.warning("{} {} SCRAP from: {}".format(
@@ -62,23 +62,16 @@ class ScrapEffect(Effect):
             assert len(targets) <= self.up_to
 
             for target in targets:
-                for zone in self.zones:
-                    # TODO This doesn't work because we're only specifying targets, not locations
-                    # Either need to specify location as well, or include location info on cards
-                    try:
-                        self.gamestate[zone].remove(target)
-                    except ValueError:
-                        continue
-                    else:
-                        logging.warning("{} is scrapping {} from {}".format(
-                            self.gamestate.active_player.name,
-                            target.name,
-                            zone.name if not isinstance(zone, tuple) else zone[1].name))
-                        if zone == Zones.TRADE_ROW:
-                            self.gamestate.fill_trade_row()
-                        break
-                else:
-                    raise ValueError("bad target")
+                origin_zone = target.location
+                logging.warning("{} is scrapping {} from {}".format(
+                    self.gamestate.active_player.name,
+                    target.name,
+                    origin_zone.name))
+
+                target.move_to(Zones.SCRAP_HEAP)
+                self.gamestate[origin_zone].remove(target)
+                if origin_zone == Zones.TRADE_ROW:
+                    self.gamestate.fill_trade_row()
 
         else:
             logging.warning("{} doesn't scrap anything".format(self.gamestate.active_player.name))

@@ -1,4 +1,5 @@
 from cards import *
+from enums import Zones
 
 standard_deck = {
     BlobFighter: 3,
@@ -51,4 +52,5 @@ standard_deck = {
 
 
 def get_fresh_trade_deck():
-    return [c() for _c in [[card] * number for card, number in standard_deck.items()] for c in _c]
+    return [c(location=Zones.TRADE_DECK)
+            for _c in [[card] * number for card, number in standard_deck.items()] for c in _c]

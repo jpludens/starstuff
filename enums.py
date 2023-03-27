@@ -27,6 +27,7 @@ class Zones(Enum):
     DISCARD = "DISCARD"
     TRADE_ROW = "TRADE_ROW"
     TRADE_DECK = "TRADE_DECK"
+    SCRAP_HEAP = "SCRAP_HEAP"
 
 
 class Factions(Enum):

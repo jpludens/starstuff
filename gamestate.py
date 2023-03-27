@@ -59,6 +59,7 @@ class GameState(object):
         if new_cards:
             for new_card in new_cards:
                 logging.warning("Trade Row: {} added".format(new_card.name))
+                new_card.move_to(Zones.TRADE_ROW)
                 self.trade_row.append(new_card)
         else:
             logging.warning("Trade Row: Empty!")

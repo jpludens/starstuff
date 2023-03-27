@@ -1,8 +1,3 @@
-# Scrap is done, but all the various kajiggering everywhere to see if cards are in places makes it clear:
-# Goal: Cards need to be aware of their location and move themselves around the board
-# being aware of location means being of which player they belong to
-# it's probably time to abandon active/inactive in favor of a player id
-
 # Goal: Get Recycling Station implement since it's the most involved
 # (requires a choice, then targets, then has knock-on effects)
 # First, get Machine Cult scrap and Star Empire discard working

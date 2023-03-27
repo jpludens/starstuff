@@ -2,7 +2,7 @@ from random import shuffle
 from collections import Counter
 
 from cards import Scout, Viper
-from util import move_list_contents, move_list_item
+from util import move_list_item
 from enums import ValueTypes, Zones
 
 
@@ -18,9 +18,9 @@ class PlayerState(object):
 
         deck = []
         for _ in range(8):
-            deck.append(Scout())
+            deck.append(Scout(owner_id=name, location=Zones.DECK))
         for _ in range(2):
-            deck.append(Viper())
+            deck.append(Viper(owner_id=name, location=Zones.DECK))
         self.zones = {
             Zones.DECK: deck,
             Zones.HAND: [],
@@ -51,7 +51,9 @@ class PlayerState(object):
 
     def shuffle_deck(self):
         assert len(self[Zones.DECK]) == 0
-        move_list_contents(self[Zones.DISCARD], self[Zones.DECK])
+        for card in list(self[Zones.DISCARD]):
+            card.move_to(Zones.DECK)
+            move_list_item(card, self[Zones.DISCARD], self[Zones.DECK])
         shuffle(self[Zones.DECK])
 
     def draw(self, n=5):
@@ -61,11 +63,13 @@ class PlayerState(object):
             except IndexError:
                 self.shuffle_deck()
                 card = self[Zones.DECK].pop(0)
+
+            card.move_to(Zones.HAND)
             self[Zones.HAND].append(card)
 
     def start_turn(self):
         for base in self[Zones.IN_PLAY]:
-            base.initialize_in_play()
+            base.ready()
 
     def end_turn(self):
         self[ValueTypes.DAMAGE] = 0
@@ -74,9 +78,9 @@ class PlayerState(object):
 
         ships = []
         for card in self[Zones.IN_PLAY]:
-            card.deinitialize_from_play()
             if card.is_ship():
                 ships.append(card)
+            card.move_to(Zones.DISCARD)
         for ship in ships:
             move_list_item(ship, self[Zones.IN_PLAY], self[Zones.DISCARD])
 
@@ -84,7 +88,3 @@ class PlayerState(object):
             self.draw(5)
         except IndexError:
             assert len(self[Zones.DECK]) + len(self[Zones.DISCARD]) == 0
-
-    def destroy_base(self, base):
-        base.deinitialize_from_play()
-        move_list_item(base, self[Zones.IN_PLAY], self[Zones.DISCARD])

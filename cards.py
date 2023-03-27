@@ -17,14 +17,34 @@ class Card(object):
     defense = None
     abilities = None
 
-    def __init__(self):
+    def __init__(self, owner_id=None, location=None):
         self.available_abilities = {}
         self.active_factions = set()
 
-    def initialize_in_play(self):
+        self.owner_id = owner_id
+        self.location = location
+
+    def ready(self):
         if self.faction:
             self.active_factions.add(self.faction)
         self.available_abilities.update(self.abilities)
+
+    def exhaust(self):
+        self.active_factions.clear()
+        self.available_abilities.clear()
+
+    def move_to(self, new_zone, new_owner_id=None):
+        if new_zone == Zones.IN_PLAY:
+            self.ready()
+        elif self.location == Zones.IN_PLAY:
+            self.exhaust()
+
+        if new_zone == Zones.SCRAP_HEAP:
+            self.owner_id = Zones.SCRAP_HEAP
+
+        self.location = new_zone
+        if new_owner_id:
+            self.owner_id = new_owner_id
 
     def trigger_ability(self, trigger):
         effects_data = self.available_abilities.pop(trigger)
@@ -42,10 +62,6 @@ class Card(object):
             else:
                 logging.warning("Ignoring ability - {}: {}".format(k, v))
         return effects
-
-    def deinitialize_from_play(self):
-        self.active_factions.clear()
-        self.available_abilities.clear()
 
     def is_base(self):
         return self.card_type != CardTypes.SHIP

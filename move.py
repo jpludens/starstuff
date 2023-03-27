@@ -36,12 +36,12 @@ class PlayCard(AbilityActivation):
 
     def execute(self, gamestate):
         logging.warning("{} is PLAYING: {}".format(gamestate.active_player.name, self.card.name))
+        self.card.move_to(Zones.IN_PLAY)
+        gamestate.active_player.active_factions.update(self.card.active_factions)
         move_list_item(self.card,
                        gamestate.active_player[Zones.HAND],
                        gamestate.active_player[Zones.IN_PLAY])
-        self.card.initialize_in_play()
 
-        gamestate.active_player.active_factions.update(self.card.active_factions)
         if self.card.card_type == CardTypes.SHIP:
             self.activate_ability(gamestate)
 
@@ -64,6 +64,7 @@ class ActivateScrap(AbilityActivation):
         self.card = card
 
     def execute(self, gamestate):
+        self.card.move_to(Zones.SCRAP_HEAP)
         gamestate.active_player[Zones.IN_PLAY].remove(self.card)
         gamestate.active_player.active_factions.subtract(self.card.active_factions)
         self.activate_ability(gamestate)
@@ -77,17 +78,17 @@ class BuyCard(Move):
         logging.warning("{} is BUYING: {}".format(gamestate.active_player.name, self.card.name))
 
         gamestate.active_player[ValueTypes.TRADE] -= self.card.cost
+        if self.card == Explorer:
+            pass  # TODO (again)
+        else:
+            self.card.move_to(Zones.DISCARD, new_owner_id=gamestate.active_player.name)
+            move_list_item(self.card, gamestate.trade_row, gamestate.active_player[Zones.DISCARD])
+            gamestate.fill_trade_row()
+
         logging.warning("{} spent {} TRADE and has {} remaining".format(
             gamestate.active_player.name,
             self.card.cost,
             gamestate.active_player[ValueTypes.TRADE]))
-
-        if self.card == Explorer:
-            # TODO: Explorers aren't working
-            gamestate.active_player[Zones.DISCARD].append(self.card())
-        else:
-            move_list_item(self.card, gamestate.trade_row, gamestate.active_player[Zones.DISCARD])
-            gamestate.fill_trade_row()
 
 
 class Attack(Move):
@@ -101,7 +102,11 @@ class Attack(Move):
                 gamestate.active_player.name,
                 self.target.name,
                 self.target.defense))
-            gamestate.opponent.destroy_base(self.target)
+
+            gamestate.active_player[ValueTypes.DAMAGE] -= self.target.defense
+            self.target.move_to(Zones.DISCARD)
+            move_list_item(self.target, gamestate.opponent[Zones.IN_PLAY], gamestate.opponent[Zones.DISCARD])
+
             logging.warning("{} has {} DAMAGE remaining".format(
                 gamestate.active_player.name,
                 gamestate.active_player[ValueTypes.AUTHORITY]))
@@ -112,8 +117,10 @@ class Attack(Move):
                 gamestate.active_player.name,
                 self.target.name,
                 gamestate.active_player[ValueTypes.DAMAGE]))
+
             self.target[ValueTypes.AUTHORITY] -= gamestate.active_player[ValueTypes.DAMAGE]
             gamestate.active_player[ValueTypes.DAMAGE] = 0
+
             logging.warning("{} has {} AUTHORITY remaining".format(self.target.name,
                                                                    self.target[ValueTypes.AUTHORITY]))
 
