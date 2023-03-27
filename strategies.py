@@ -1,8 +1,9 @@
-from random import choice, sample
+from random import choice, sample, randint
 from cards import Explorer, Viper, Scout, MachineBase
+from effects import PendDiscard, PendScrap
 from enums import Triggers, CardTypes, ValueTypes, Zones, Factions, Abilities
 from move import PlayCard, ActivateBase, ActivateAlly, ActivateScrap, BuyCard, EndTurn, Attack, Choose, Scrap, \
-    ForcedDiscard
+    Discard
 
 
 class Strategy(object):
@@ -69,7 +70,10 @@ class Strategy(object):
     def _get_activate_base_move(cls, gamestate, card):
         if Abilities.CHOICE in card.abilities[Triggers.BASE]:
             chosen_choice = choice(list(card.abilities[Triggers.BASE][Abilities.CHOICE].keys()))
-            return [ActivateBase(card), Choose(chosen_choice)]
+            if chosen_choice == Abilities.RECYCLE:
+                pass
+            else:
+                return [ActivateBase(card), Choose(chosen_choice)]
         if Abilities.SCRAP in card.abilities[Triggers.BASE]:
             if not isinstance(card, MachineBase):  # Handled at top level because the DRAW provides more info/options
                 scrap_effect = card.abilities[Triggers.BASE][Abilities.SCRAP]
@@ -157,17 +161,27 @@ class FactionStrategy(Strategy):
 
     def get_moves(self, gamestate):
         # TODO: set a "prompt" on gamestate, e.g. Discard X, Neutral, Choose, Scrap
-        if gamestate.halt_until_discard:
-            if gamestate.forced_discards >= len(gamestate[Zones.HAND]):
-                return [ForcedDiscard(gamestate[Zones.HAND])]
-            return [ForcedDiscard(sample(gamestate[Zones.HAND], gamestate.forced_discards))]
+        if isinstance(gamestate.pending_effect, PendDiscard):
+            if gamestate.pending_effect.mandatory:
+                if gamestate.pending_effect.up_to >= len(gamestate[Zones.HAND]):
+                    return [Discard(gamestate[Zones.HAND])]
+                return [Discard(sample(gamestate[Zones.HAND], gamestate.pending_effect.up_to))]
+            number_to_discard = randint(0, gamestate.pending_effect.up_to)
+            if number_to_discard >= len(gamestate[Zones.HAND]):
+                return [Discard(gamestate[Zones.HAND])]
+            return [Discard(sample(gamestate[Zones.HAND], number_to_discard))]
 
         playerstate = gamestate.active_player
 
         # If we have to Scrap (because of Machine Base), do it
-        if gamestate.pending_scrap and gamestate.pending_scrap.mandatory:
+        if isinstance(gamestate.pending_effect, PendScrap) and gamestate.pending_effect.mandatory:
             if gamestate.active_player[Zones.HAND]:
                 return [Scrap(gamestate.active_player[Zones.HAND][0])]
+
+        # If we have bases, activate them
+        for card in playerstate[Zones.IN_PLAY]:
+            if card.is_base() and Triggers.BASE in card.available_abilities:
+                return self._get_activate_base_move(gamestate, card)
 
         # If we have any ships with scrap abilities, play them
         scrap_ships = [card for card in playerstate[Zones.HAND]
@@ -180,11 +194,6 @@ class FactionStrategy(Strategy):
         # If we have cards, play them
         if playerstate[Zones.HAND]:
             return self._get_play_all_cards_moves(gamestate)
-
-        # If we have bases, activate them
-        for card in playerstate[Zones.IN_PLAY]:
-            if card.is_base() and Triggers.BASE in card.available_abilities:
-                return self._get_activate_base_move(gamestate, card)
 
         # If we have ally abilities available, activate them
         ally_moves = self._get_activate_all_ally_abilities(gamestate)

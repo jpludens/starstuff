@@ -42,4 +42,5 @@ class Abilities(Enum):
     SCRAP = "SCRAP"
     CHOICE = "CHOICE"
     DISCARD = "DISCARD"
+    RECYCLE = "RECYCLE"
     UNIMPLEMENTED = "UNIMPLEMENTED"

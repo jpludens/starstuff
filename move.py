@@ -1,6 +1,7 @@
 import logging
 
 from cards import Explorer, Card
+from effects import PendScrap, PendChoice, PendDiscard
 from enums import Zones, CardTypes, Triggers, ValueTypes
 from util import move_list_item
 
@@ -32,7 +33,6 @@ class AbilityActivation(Move):
 class PlayCard(AbilityActivation):
     def __init__(self, card):
         super().__init__(card, Triggers.SHIP)
-        self.card = card
 
     def execute(self, gamestate):
         logging.warning("{} is PLAYING: {}".format(gamestate.active_player.name, self.card.name))
@@ -49,19 +49,16 @@ class PlayCard(AbilityActivation):
 class ActivateBase(AbilityActivation):
     def __init__(self, card):
         super().__init__(card, Triggers.BASE)
-        self.card = card
 
 
 class ActivateAlly(AbilityActivation):
     def __init__(self, card):
         super().__init__(card, Triggers.ALLY)
-        self.card = card
 
 
 class ActivateScrap(AbilityActivation):
     def __init__(self, card):
         super().__init__(card, Triggers.SCRAP)
-        self.card = card
 
     def execute(self, gamestate):
         self.activate_ability(gamestate)  # Must occur before "moving" card because that move function clears abilities
@@ -134,17 +131,13 @@ class EndTurn(Move):
         gamestate.next_turn()
 
 
-class ForcedDiscard(Move):
+class Discard(Move):
     def __init__(self, cards):
         self.cards = cards
 
     def execute(self, gamestate):
-        for card in self.cards:
-            logging.warning("{} DISCARDS {}".format(gamestate.active_player.name, card.name))
-            card.move_to(Zones.DISCARD)
-            move_list_item(card, gamestate[Zones.HAND], gamestate[Zones.DISCARD])
-        gamestate.forced_discards = 0
-        gamestate.halt_until_discard = False
+        assert isinstance(gamestate.pending_effect, PendDiscard)
+        gamestate.pending_effect.resolve(self.cards)
 
 
 class Choose(Move):
@@ -152,8 +145,9 @@ class Choose(Move):
         self.choice = choice
 
     def execute(self, gamestate):
-        logging.warning("{} is CHOOSING {}".format(gamestate.active_player.name, self.choice.name))
-        gamestate.pending_choice.resolve(self.choice)
+        assert isinstance(gamestate.pending_effect, PendChoice)
+        assert self.choice in gamestate.pending_effect.choices
+        gamestate.pending_effect.resolve(self.choice)
 
 
 class Scrap(Move):
@@ -161,18 +155,7 @@ class Scrap(Move):
         self.targets = targets
 
     def execute(self, gamestate):
-        if gamestate.pending_scrap is None:
-            logging.error("Scrap Move provided without pending Scrap Effect"
-                          " or when a Scrap Effect has no possible targets")
-            raise RuntimeError
-        gamestate.pending_scrap.resolve(self.targets)
-
-
-class Target(Move):
-    def execute(self, gamestate):
-        pass
-
-
-class Discard(Move):
-    def execute(self, gamestate):
-        pass
+        assert isinstance(gamestate.pending_effect, PendScrap)
+        if gamestate.pending_effect.mandatory:
+            assert len(self.targets) >= gamestate.pending_effect.up_to
+        gamestate.pending_effect.resolve(self.targets)

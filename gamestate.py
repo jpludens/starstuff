@@ -2,6 +2,7 @@ import logging
 from itertools import cycle
 from random import shuffle
 
+from effects import PendDiscard
 from enums import Zones
 from playerstate import PlayerState
 from decks import get_fresh_trade_deck
@@ -31,10 +32,8 @@ class GameState(object):
         self.opponent = player2
 
         self.victor = None
-        self.pending_choice = None
-        self.pending_scrap = None
         self.forced_discards = 0
-        self.halt_until_discard = False
+        self.pending_effect = None
 
     def __getitem__(self, key):
         try:
@@ -49,10 +48,8 @@ class GameState(object):
                     return self.trade_row
                 elif key == Zones.TRADE_DECK:
                     return self.trade_deck
-                elif isinstance(key, tuple):
+                elif isinstance(key, tuple):  # Ensure old (player, zone) key strategy isn't in use
                     raise RuntimeError
-                    # player, zone = key TODO
-                    # return self.players[player][zone]
 
     def fill_trade_row(self):
         cards_in_row = len(self.trade_row)
@@ -73,7 +70,8 @@ class GameState(object):
         self.turn_number += 1
         self.opponent = self.active_player
         self.active_player = next(self._turn_order)
-        self.active_player.start_turn()  # Long live the King!
-
         if self.forced_discards:
-            self.halt_until_discard = True
+            self.pending_effect = PendDiscard(up_to=self.forced_discards, mandatory=True)
+            self.pending_effect.apply(self)
+            self.forced_discards = 0
+        self.active_player.start_turn()  # Long live the King!

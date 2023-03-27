@@ -1,6 +1,3 @@
-# Goal: Get Recycling Station implement since it's the most involved
-# (requires a choice, then targets, then has knock-on effects)
-
 # Goal: Implement remaining abilities
 #    Mech World
 #    Destroy Base
@@ -20,8 +17,6 @@
 #          Target move
 #    Fleet HQ
 #           introduce a check that examines all moves for Actions.Play with a card with CardType.SHIP
-#    Recycling Station
-#       Discard move with targets
 
 # Goal: Use a Strategy class to trigger deterministic abilities
 # Goal: use a Strategy class to mimic app

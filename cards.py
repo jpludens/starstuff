@@ -1,13 +1,13 @@
 import logging
 
-from effects import ValueEffect, DrawEffect, ChoiceEffect, ScrapEffect, ForceDiscardEffect
+from effects import ValueEffect, DrawEffect, OpponentDiscardEffect, PendChoice, PendScrap, PendRecycle
 from enums import Abilities, Triggers, CardTypes, Factions, ValueTypes, Zones
 
 
 DRAW_ONE = DrawEffect(1)
-SCRAP_FROM_TRADE_ROW = ScrapEffect(Zones.TRADE_ROW)
-SCRAP_FROM_HAND_OR_DISCARD = ScrapEffect(Zones.HAND, Zones.DISCARD)
-DISCARD = ForceDiscardEffect()
+SCRAP_FROM_TRADE_ROW = PendScrap(Zones.TRADE_ROW)
+SCRAP_FROM_HAND_OR_DISCARD = PendScrap(Zones.HAND, Zones.DISCARD)
+DISCARD = OpponentDiscardEffect()
 
 
 class Card(object):
@@ -53,11 +53,11 @@ class Card(object):
         for k, v in effects_data.items():
             if isinstance(k, ValueTypes):
                 effects.append(ValueEffect(k, v))
-            elif k in [Abilities.DRAW, Abilities.SCRAP, Abilities.DISCARD]:
+            elif k in [Abilities.DRAW, Abilities.SCRAP, Abilities.DISCARD, Abilities.RECYCLE]:
                 effects.append(v)
             elif k == Abilities.CHOICE:
                 choices = {ck: ValueEffect(ck, cv) for ck, cv in v.items()}
-                effects.append(ChoiceEffect(choices))
+                effects.append(PendChoice(choices))
             else:
                 logging.warning("Ignoring ability - {}: {}".format(k, v))
         return effects
@@ -644,7 +644,7 @@ class MachineBase(Card):
     abilities = {
         Triggers.BASE: {
             Abilities.DRAW: DRAW_ONE,
-            Abilities.SCRAP: ScrapEffect(Zones.HAND, mandatory=True)
+            Abilities.SCRAP: PendScrap(Zones.HAND, mandatory=True)
         }
     }
 
@@ -702,7 +702,7 @@ class SurveyShip(Card):
     cost = 3
     abilities = {
         Triggers.SHIP: {
-            ValueTypes.TRADE: 3,
+            ValueTypes.TRADE: 1,
             Abilities.DRAW: DRAW_ONE
         },
         Triggers.SCRAP: {
@@ -775,7 +775,7 @@ class RecyclingStation(Card):
     defense = 4
     abilities = {
         Triggers.BASE: {
-            Abilities.UNIMPLEMENTED: "Recycling Station"
+            Abilities.RECYCLE: PendRecycle()
         }
     }
 
