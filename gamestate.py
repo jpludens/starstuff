@@ -33,6 +33,8 @@ class GameState(object):
         self.victor = None
         self.pending_choice = None
         self.pending_scrap = None
+        self.forced_discards = 0
+        self.halt_until_discard = False
 
     def __getitem__(self, key):
         try:
@@ -72,3 +74,6 @@ class GameState(object):
         self.opponent = self.active_player
         self.active_player = next(self._turn_order)
         self.active_player.start_turn()  # Long live the King!
+
+        if self.forced_discards:
+            self.halt_until_discard = True

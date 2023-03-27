@@ -37,6 +37,16 @@ class DrawEffect(Effect):
                 logging.warning("{} DRAWS a card".format(player.name))
 
 
+class ForceDiscardEffect(Effect):
+    def apply(self, gamestate):
+        if gamestate.forced_discards:
+            gamestate.forced_discards += 1
+            logging.warning("{} must now DISCARD {} cards".format(gamestate.opponent.name, gamestate.forced_discards))
+        else:
+            gamestate.forced_discards = 1
+            logging.warning("{} must DISCARD 1 card".format(gamestate.opponent.name))
+
+
 class ScrapEffect(Effect):
     def __init__(self, *zones, up_to=1, mandatory=False):
         super().__init__()

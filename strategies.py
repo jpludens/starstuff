@@ -1,7 +1,8 @@
-from random import choice
+from random import choice, sample
 from cards import Explorer, Viper, Scout, MachineBase
 from enums import Triggers, CardTypes, ValueTypes, Zones, Factions, Abilities
-from move import PlayCard, ActivateBase, ActivateAlly, ActivateScrap, BuyCard, EndTurn, Attack, Choose, Scrap
+from move import PlayCard, ActivateBase, ActivateAlly, ActivateScrap, BuyCard, EndTurn, Attack, Choose, Scrap, \
+    ForcedDiscard
 
 
 class Strategy(object):
@@ -131,7 +132,6 @@ class Strategy(object):
                 moves.append(ActivateAlly(card))
         return moves
 
-
 # class BasicStrategy(Strategy):
 #     def get_moves(self, gamestate):
 #         sequence = [self.get_purchases,
@@ -156,6 +156,12 @@ class FactionStrategy(Strategy):
         self.faction = faction
 
     def get_moves(self, gamestate):
+        # TODO: set a "prompt" on gamestate, e.g. Discard X, Neutral, Choose, Scrap
+        if gamestate.halt_until_discard:
+            if gamestate.forced_discards >= len(gamestate[Zones.HAND]):
+                return [ForcedDiscard(gamestate[Zones.HAND])]
+            return [ForcedDiscard(sample(gamestate[Zones.HAND], gamestate.forced_discards))]
+
         playerstate = gamestate.active_player
 
         # If we have to Scrap (because of Machine Base), do it

@@ -1,12 +1,13 @@
 import logging
 
-from effects import ValueEffect, DrawEffect, ChoiceEffect, ScrapEffect
+from effects import ValueEffect, DrawEffect, ChoiceEffect, ScrapEffect, ForceDiscardEffect
 from enums import Abilities, Triggers, CardTypes, Factions, ValueTypes, Zones
 
 
 DRAW_ONE = DrawEffect(1)
 SCRAP_FROM_TRADE_ROW = ScrapEffect(Zones.TRADE_ROW)
 SCRAP_FROM_HAND_OR_DISCARD = ScrapEffect(Zones.HAND, Zones.DISCARD)
+DISCARD = ForceDiscardEffect()
 
 
 class Card(object):
@@ -52,9 +53,7 @@ class Card(object):
         for k, v in effects_data.items():
             if isinstance(k, ValueTypes):
                 effects.append(ValueEffect(k, v))
-            elif k == Abilities.DRAW:
-                effects.append(v)
-            elif k == Abilities.SCRAP:
+            elif k in [Abilities.DRAW, Abilities.SCRAP, Abilities.DISCARD]:
                 effects.append(v)
             elif k == Abilities.CHOICE:
                 choices = {ck: ValueEffect(ck, cv) for ck, cv in v.items()}
@@ -672,7 +671,7 @@ class ImperialFighter(Card):
     abilities = {
         Triggers.SHIP: {
             ValueTypes.DAMAGE: 2,
-            Abilities.UNIMPLEMENTED: "Discard"
+            Abilities.DISCARD: DISCARD
         },
         Triggers.ALLY: {
             ValueTypes.DAMAGE: 2,
@@ -707,7 +706,7 @@ class SurveyShip(Card):
             Abilities.DRAW: DRAW_ONE
         },
         Triggers.SCRAP: {
-            Abilities.UNIMPLEMENTED: "Discard"
+            Abilities.DISCARD: DISCARD
         }
     }
 
@@ -720,7 +719,7 @@ class ImperialFrigate(Card):
     abilities = {
         Triggers.SHIP: {
             ValueTypes.DAMAGE: 4,
-            Abilities.UNIMPLEMENTED: "Discard"
+            Abilities.DISCARD: DISCARD
         },
         Triggers.ALLY: {
             ValueTypes.DAMAGE: 2,
@@ -732,10 +731,10 @@ class ImperialFrigate(Card):
     }
 
 
-class BattleCruiser(Card):
+class Battlecruiser(Card):
     card_type = CardTypes.SHIP
     faction = Factions.STAR_EMPIRE
-    name = "BattleCruiser"
+    name = "Battlecruiser"
     cost = 6
     abilities = {
         Triggers.SHIP: {
@@ -743,7 +742,7 @@ class BattleCruiser(Card):
             Abilities.DRAW: DRAW_ONE
         },
         Triggers.ALLY: {
-            Abilities.UNIMPLEMENTED: "Discard"
+            Abilities.DISCARD: DISCARD
         },
         Triggers.SCRAP: {
             Abilities.UNIMPLEMENTED: "Draw AND Blow Base",
@@ -827,7 +826,7 @@ class RoyalRedoubt(Card):
             ValueTypes.DAMAGE: 3
         },
         Triggers.ALLY: {
-            Abilities.UNIMPLEMENTED: "Discard"
+            Abilities.DISCARD: DISCARD
         }
     }
 

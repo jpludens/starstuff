@@ -41,4 +41,5 @@ class Abilities(Enum):
     DRAW = "DRAW"
     SCRAP = "SCRAP"
     CHOICE = "CHOICE"
+    DISCARD = "DISCARD"
     UNIMPLEMENTED = "UNIMPLEMENTED"

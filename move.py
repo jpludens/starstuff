@@ -64,10 +64,10 @@ class ActivateScrap(AbilityActivation):
         self.card = card
 
     def execute(self, gamestate):
+        self.activate_ability(gamestate)  # Must occur before "moving" card because that move function clears abilities
         self.card.move_to(Zones.SCRAP_HEAP)
         gamestate.active_player[Zones.IN_PLAY].remove(self.card)
         gamestate.active_player.active_factions.subtract(self.card.active_factions)
-        self.activate_ability(gamestate)
 
 
 class BuyCard(Move):
@@ -132,6 +132,19 @@ class EndTurn(Move):
     def execute(self, gamestate):
         logging.warning("{} is ENDING THEIR TURN".format(gamestate.active_player.name))
         gamestate.next_turn()
+
+
+class ForcedDiscard(Move):
+    def __init__(self, cards):
+        self.cards = cards
+
+    def execute(self, gamestate):
+        for card in self.cards:
+            logging.warning("{} DISCARDS {}".format(gamestate.active_player.name, card.name))
+            card.move_to(Zones.DISCARD)
+            move_list_item(card, gamestate[Zones.HAND], gamestate[Zones.DISCARD])
+        gamestate.forced_discards = 0
+        gamestate.halt_until_discard = False
 
 
 class Choose(Move):
