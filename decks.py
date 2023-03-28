@@ -42,7 +42,7 @@ standard_deck = {
     SurveyShip: 3,
     ImperialFrigate: 3,
     Battlecruiser: 1,
-    Dreadnought: 1,
+    Dreadnaught: 1,
     RecyclingStation: 2,
     SpaceStation: 2,
     WarWorld: 1,

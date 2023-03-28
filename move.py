@@ -2,7 +2,7 @@ import logging
 
 from cards import Explorer, Card
 from effects import PendScrap, PendChoice, PendDiscard
-from enums import Zones, CardTypes, Triggers, ValueTypes
+from enums import Zones, CardTypes, Triggers, ValueTypes, Abilities
 from util import move_list_item
 
 
@@ -55,16 +55,23 @@ class ActivateAlly(AbilityActivation):
     def __init__(self, card):
         super().__init__(card, Triggers.ALLY)
 
+    def execute(self, gamestate):
+        if gamestate.active_player.active_factions[self.card.faction] <= 1:
+            raise FileNotFoundError
+        self.activate_ability(gamestate)
+
 
 class ActivateScrap(AbilityActivation):
     def __init__(self, card):
         super().__init__(card, Triggers.SCRAP)
 
     def execute(self, gamestate):
-        self.activate_ability(gamestate)  # Must occur before "moving" card because that move function clears abilities
+        # Both these steps must occur before "moving" card because that move function clears abilities
+        self.activate_ability(gamestate)
+        gamestate.active_player.active_factions.subtract(self.card.active_factions)
+
         self.card.move_to(Zones.SCRAP_HEAP)
         gamestate.active_player[Zones.IN_PLAY].remove(self.card)
-        gamestate.active_player.active_factions.subtract(self.card.active_factions)
 
 
 class BuyCard(Move):
@@ -93,8 +100,13 @@ class Attack(Move):
         self.target = target
 
     def execute(self, gamestate):
+        opponent_has_outpost = any([c.card_type == CardTypes.OUTPOST for c in gamestate.opponent[Zones.IN_PLAY]])
+
         # Attack Base
         if isinstance(self.target, Card):
+            if opponent_has_outpost and self.target.card_type != CardTypes.OUTPOST:
+                raise FileNotFoundError
+
             logging.warning("{} is ATTACKING {} for {} damage!".format(
                 gamestate.active_player.name,
                 self.target.name,
@@ -110,6 +122,8 @@ class Attack(Move):
 
         # Attack Opponent
         else:
+            if opponent_has_outpost:
+                raise FileNotFoundError
             logging.warning("{} is ATTACKING {} for {} damage!".format(
                 gamestate.active_player.name,
                 self.target.name,
@@ -132,11 +146,15 @@ class EndTurn(Move):
 
 
 class Discard(Move):
-    def __init__(self, cards):
+    def __init__(self, *cards):
         self.cards = cards
 
     def execute(self, gamestate):
         assert isinstance(gamestate.pending_effect, PendDiscard)
+        if gamestate.pending_effect.mandatory\
+                and len(self.cards) < gamestate.pending_effect.up_to\
+                and len(self.cards) < len(gamestate[Zones.HAND]):
+            raise FileNotFoundError
         gamestate.pending_effect.resolve(self.cards)
 
 
@@ -146,7 +164,8 @@ class Choose(Move):
 
     def execute(self, gamestate):
         assert isinstance(gamestate.pending_effect, PendChoice)
-        assert self.choice in gamestate.pending_effect.choices
+        if self.choice not in gamestate.pending_effect.choices:
+            raise FileNotFoundError
         gamestate.pending_effect.resolve(self.choice)
 
 
@@ -156,6 +175,11 @@ class Scrap(Move):
 
     def execute(self, gamestate):
         assert isinstance(gamestate.pending_effect, PendScrap)
+        for target in self.targets:
+            if target.location not in gamestate.pending_effect.zones:
+                raise FileNotFoundError
         if gamestate.pending_effect.mandatory:
-            assert len(self.targets) >= gamestate.pending_effect.up_to
+            if len(self.targets) < gamestate.pending_effect.up_to:
+                raise FileNotFoundError
+
         gamestate.pending_effect.resolve(self.targets)

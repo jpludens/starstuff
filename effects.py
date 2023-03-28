@@ -2,8 +2,6 @@ import logging
 from abc import ABC
 
 from enums import Zones
-
-
 from util import move_list_item
 
 
@@ -108,7 +106,8 @@ class PendEffect(Effect, ABC):
 
     def resolve(self, *args, **kwargs):
         self._resolve(*args, **kwargs)
-        self.gamestate.pending_effect = None
+        if self.gamestate.pending_effect == self:  # This line almost on its own supports nesting effects
+            self.gamestate.pending_effect = None
         self.gamestate = None
 
     def _resolve(self, *args, **kwargs):
@@ -173,9 +172,6 @@ class PendDiscard(PendEffect):
 class PendRecycle(PendDiscard):
     def __init__(self):
         super().__init__(up_to=2, mandatory=False)
-
-    def apply(self, gamestate):
-        super().apply(gamestate)
 
     def _resolve(self, discards):
         DiscardEffect(discards).apply(self.gamestate)

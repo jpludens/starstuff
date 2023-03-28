@@ -56,7 +56,7 @@ class Card(object):
             elif k in [Abilities.DRAW, Abilities.SCRAP, Abilities.DISCARD, Abilities.RECYCLE]:
                 effects.append(v)
             elif k == Abilities.CHOICE:
-                choices = {ck: ValueEffect(ck, cv) for ck, cv in v.items()}
+                choices = {ck: ValueEffect(ck, cv) if isinstance(ck, ValueTypes) else cv for ck, cv in v.items()}
                 effects.append(PendChoice(choices))
             else:
                 logging.warning("Ignoring ability - {}: {}".format(k, v))
@@ -750,10 +750,10 @@ class Battlecruiser(Card):
     }
 
 
-class Dreadnought(Card):
+class Dreadnaught(Card):
     card_type = CardTypes.SHIP
     faction = Factions.STAR_EMPIRE
-    name = "Dreadnought"
+    name = "Dreadnaught"
     cost = 7
     abilities = {
         Triggers.SHIP: {
@@ -775,7 +775,10 @@ class RecyclingStation(Card):
     defense = 4
     abilities = {
         Triggers.BASE: {
-            Abilities.RECYCLE: PendRecycle()
+            Abilities.CHOICE: {
+                ValueTypes.TRADE: 1,
+                Abilities.RECYCLE: PendRecycle()
+            }
         }
     }
 

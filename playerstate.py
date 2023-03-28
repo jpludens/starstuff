@@ -33,14 +33,12 @@ class PlayerState(object):
         shuffle(self.zones[Zones.DECK])
         self.draw(3 if first_player else 5)
 
-    # Allow dict-style access to values and zones
     def __getitem__(self, key):
         try:
             return self.values[key]
         except KeyError:
             return self.zones[key]
 
-    # Allow dict-style access to values and zones
     def __setitem__(self, key, value):
         if key in self.values:
             self.values[key] = value
