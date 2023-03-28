@@ -51,6 +51,59 @@ class OpponentDiscardEffect(Effect):
             logging.warning("{} must DISCARD 1 card at start of turn".format(gamestate.opponent.name))
 
 
+class GainFactionEffect(Effect):
+    def __init__(self, *factions):
+        self.factions = factions
+
+    def apply(self, gamestate):
+        gamestate.active_player.active_factions.update(self.factions)
+        gamestate.last_activated_card.active_factions.update(self.factions)
+
+
+# Pending Effects (requiring additional input from a player)
+class PendEffect(Effect, ABC):
+    def __init__(self):
+        self.gamestate = None
+
+    def apply(self, gamestate):
+        self.gamestate = gamestate
+        gamestate.pending_effect = self
+
+    def resolve(self, *args, **kwargs):
+        self._resolve(*args, **kwargs)
+        if self.gamestate.pending_effect == self:  # This line almost on its own supports nesting effects
+            self.gamestate.pending_effect = None
+        self.gamestate = None
+
+    def _resolve(self, *args, **kwargs):
+        raise NotImplementedError
+
+
+class ChoiceEffect(Effect):
+    def __init__(self, choice):
+        self.choice = choice
+
+    def apply(self, gamestate):
+        self.choice.apply(gamestate)
+
+
+class PendChoice(PendEffect):
+    def __init__(self, choices):
+        super().__init__()
+        self.choices = choices
+
+    def apply(self, gamestate):
+        super().apply(gamestate)
+        # TODO: Adjust this log message for Recycling Station (the only Choice that is not a ValueEffect w named key)
+        keys = list(self.choices.keys())
+        logging.warning("{} can choose {} or {}".format(
+            gamestate.active_player.name, keys[0].name, keys[1].name))
+
+    def _resolve(self, choice):
+        logging.warning("{} is CHOOSING {}".format(self.gamestate.active_player.name, choice.name))
+        ChoiceEffect(self.choices[choice]).apply(self.gamestate)
+
+
 class ScrapEffect(Effect):
     def __init__(self, cards):
         self.cards = cards
@@ -73,64 +126,6 @@ class ScrapEffect(Effect):
             logging.warning("{} doesn't scrap anything".format(gamestate.active_player.name))
 
 
-class ChoiceEffect(Effect):
-    def __init__(self, choice):
-        self.choice = choice
-
-    def apply(self, gamestate):
-        self.choice.apply(gamestate)
-
-
-class DiscardEffect(Effect):
-    def __init__(self, cards):
-        self.cards = cards
-
-    def apply(self, gamestate):
-        if self.cards:
-            for card in self.cards:
-                logging.warning("{} DISCARDS {}".format(gamestate.active_player.name, card.name))
-                card.move_to(Zones.DISCARD)
-                move_list_item(card, gamestate[Zones.HAND], gamestate[Zones.DISCARD])
-        else:
-            logging.warning("{} DOESN'T DISCARD".format(gamestate.active_player.name))
-
-
-# Pending Effects (requiring additional input from a player)
-class PendEffect(Effect, ABC):
-    def __init__(self):
-        self.gamestate = None
-
-    def apply(self, gamestate):
-        self.gamestate = gamestate
-        gamestate.pending_effect = self
-
-    def resolve(self, *args, **kwargs):
-        self._resolve(*args, **kwargs)
-        if self.gamestate.pending_effect == self:  # This line almost on its own supports nesting effects
-            self.gamestate.pending_effect = None
-        self.gamestate = None
-
-    def _resolve(self, *args, **kwargs):
-        raise NotImplementedError
-
-
-class PendChoice(PendEffect):
-    def __init__(self, choices):
-        super().__init__()
-        self.choices = choices
-
-    def apply(self, gamestate):
-        super().apply(gamestate)
-        # TODO: Adjust this log message for Recycling Station (the only Choice that is not a ValueEffect w named key)
-        keys = list(self.choices.keys())
-        logging.warning("{} can choose {} or {}".format(
-            gamestate.active_player.name, keys[0].name, keys[1].name))
-
-    def _resolve(self, choice):
-        logging.warning("{} is CHOOSING {}".format(self.gamestate.active_player.name, choice.name))
-        ChoiceEffect(self.choices[choice]).apply(self.gamestate)
-
-
 class PendScrap(PendEffect):
     def __init__(self, *zones, up_to=1, mandatory=False):
         super().__init__()
@@ -150,6 +145,29 @@ class PendScrap(PendEffect):
 
     def _resolve(self, cards):
         ScrapEffect(cards).apply(self.gamestate)
+
+
+class PendBrainWorld(PendScrap):
+    def __init__(self):
+        super().__init__(Zones.HAND, Zones.DISCARD, up_to=2, mandatory=False)
+
+    def _resolve(self, scraps):
+        ScrapEffect(scraps).apply(self.gamestate)
+        DrawEffect(len(scraps)).apply(self.gamestate)
+
+
+class DiscardEffect(Effect):
+    def __init__(self, cards):
+        self.cards = cards
+
+    def apply(self, gamestate):
+        if self.cards:
+            for card in self.cards:
+                logging.warning("{} DISCARDS {}".format(gamestate.active_player.name, card.name))
+                card.move_to(Zones.DISCARD)
+                move_list_item(card, gamestate[Zones.HAND], gamestate[Zones.DISCARD])
+        else:
+            logging.warning("{} DOESN'T DISCARD".format(gamestate.active_player.name))
 
 
 class PendDiscard(PendEffect):

@@ -2,7 +2,7 @@ import logging
 
 from cards import Explorer, Card
 from effects import PendScrap, PendChoice, PendDiscard
-from enums import Zones, CardTypes, Triggers, ValueTypes, Abilities
+from enums import Zones, CardTypes, Triggers, ValueTypes
 from util import move_list_item
 
 
@@ -27,6 +27,8 @@ class AbilityActivation(Move):
 
         logging.warning("Activating {}'s {} ability".format(self.card.name, ability_text))
         for effect in self.card.trigger_ability(self.trigger):
+            # These need to occur in this order so that effects will apply to this card
+            gamestate.last_activated_card = self.card
             effect.apply(gamestate)
 
 

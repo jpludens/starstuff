@@ -1,5 +1,6 @@
 # Goal: Implement remaining abilities
-#    Mech World
+#    Scrap
+#      Brain World
 #    Destroy Base
 #    Blob Carrier
 #    Freighter / Central Office
@@ -9,8 +10,6 @@
 #         "topdeck" is like buy ... but topdecks. both reduce tracked topdeck counts
 #    Embassy Yacht
 #           Conditionality
-#    Scrap
-#      Brain World
 #    Blob World
 #          gamestate needs to keep an examinable log of turn actions to be searched for Actions.PLAY/Factions.BLOB
 #    Stealth Needle

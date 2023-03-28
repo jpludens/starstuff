@@ -1,6 +1,7 @@
 import logging
 
-from effects import ValueEffect, DrawEffect, OpponentDiscardEffect, PendChoice, PendScrap, PendRecycle
+from effects import ValueEffect, DrawEffect, OpponentDiscardEffect, PendChoice, PendScrap, PendRecycle, \
+    GainFactionEffect, PendBrainWorld
 from enums import Abilities, Triggers, CardTypes, Factions, ValueTypes, Zones
 
 
@@ -53,7 +54,9 @@ class Card(object):
         for k, v in effects_data.items():
             if isinstance(k, ValueTypes):
                 effects.append(ValueEffect(k, v))
-            elif k in [Abilities.DRAW, Abilities.SCRAP, Abilities.DISCARD, Abilities.RECYCLE]:
+            # TODO: This sure has become unwieldy
+            elif k in [Abilities.DRAW, Abilities.SCRAP, Abilities.DISCARD, Abilities.RECYCLE, Abilities.MECH_WORLD,
+                       Abilities.BRAIN_WORLD]:
                 effects.append(v)
             elif k == Abilities.CHOICE:
                 choices = {ck: ValueEffect(ck, cv) if isinstance(ck, ValueTypes) else cv for ck, cv in v.items()}
@@ -617,7 +620,7 @@ class MechWorld(Card):
     defense = 6
     abilities = {
         Triggers.BASE: {
-            Abilities.UNIMPLEMENTED: "Mech World"
+            Abilities.MECH_WORLD: GainFactionEffect(Factions.BLOB, Factions.STAR_EMPIRE, Factions.TRADE_FEDERATION)
         }
     }
 
@@ -657,7 +660,7 @@ class BrainWorld(Card):
     defense = 6
     abilities = {
         Triggers.BASE: {
-            Abilities.UNIMPLEMENTED: "Brain World"
+            Abilities.BRAIN_WORLD: PendBrainWorld()
         }
     }
 

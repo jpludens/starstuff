@@ -1,10 +1,11 @@
+from collections import Counter
 from unittest import TestCase
 # Explorers TODO (lol)
 from cards import Scout, Viper, SpaceStation, BattleStation, BarterWorld, RoyalRedoubt, BlobWheel, BlobFighter, \
     Explorer, Cutter, Dreadnaught, TradePod, SurveyShip, PatrolMech, MissileBot, MachineBase, BattlePod, \
-    ImperialFighter, RecyclingStation
-from effects import PendChoice, PendScrap, PendDiscard, PendRecycle
-from enums import Zones, ValueTypes, Triggers, Abilities
+    ImperialFighter, RecyclingStation, MechWorld, BrainWorld
+from effects import PendChoice, PendScrap, PendDiscard, PendRecycle, PendBrainWorld
+from enums import Zones, ValueTypes, Triggers, Abilities, Factions
 from gamestate import GameState
 from move import PlayCard, ActivateBase, Attack, ActivateAlly, ActivateScrap, Choose, Scrap, EndTurn, Discard
 import logging
@@ -261,6 +262,7 @@ class TestAllyAbilities(StarstuffTests):
         PlayCard(scout).execute(self.game)
         PlayCard(blob_wheel).execute(self.game)
 
+        # TODO: Really should create some semantically better Exceptions
         self.assertRaises(FileNotFoundError, ActivateAlly(scout).execute, self.game)
         self.assertRaises(FileNotFoundError, ActivateAlly(blob_wheel).execute, self.game)
 
@@ -632,9 +634,103 @@ class TestRecyclingStation(StarstuffTests):
 
         # One card will have been redrawn, the other will be in the deck
         Discard(*self.targets).execute(self.game)
-        scout_locations = set([s.location for s in self.targets])
-        self.assertIn(Zones.DECK, scout_locations)
-        self.assertIn(Zones.HAND, scout_locations)
+        target_locations = set([s.location for s in self.targets])
+        self.assertIn(Zones.DECK, target_locations)
+        self.assertIn(Zones.HAND, target_locations)
         self.assert_hand_count(3)
         self.assert_deck_count(1)
+        self.assert_discard_count(0)
+
+
+class TestMechWorld(StarstuffTests):
+    def test_mech_world(self):
+        mech_world = MechWorld()
+        self._add_cards_to_hand(mech_world)
+        self.assert_no_active_factions()
+
+        PlayCard(mech_world).execute(self.game)
+        self.assertCountEqual(self.game.active_player.active_factions,
+                              Counter([Factions.MACHINE_CULT]))
+
+        ActivateBase(mech_world).execute(self.game)
+        self.assertCountEqual(self.game.active_player.active_factions,
+                              Counter([f for f in Factions]))
+
+
+class TestBrainWorld(StarstuffTests):
+    def setUp(self):
+        super().setUp()
+        self.brain_world = BrainWorld()
+        self._add_cards_to_hand(self.brain_world)
+        PlayCard(self.brain_world).execute(self.game)
+
+    def test_no_valid_targets(self):
+        self._clear_zones(Zones.HAND, Zones.DISCARD)
+        self.assert_hand_count(0)
+        self.assert_deck_count(7)
+        self.assert_discard_count(0)
+
+        ActivateBase(self.brain_world).execute(self.game)
+        self.assert_pending(None)
+        self.assert_hand_count(0)
+        self.assert_deck_count(7)
+        self.assert_discard_count(0)
+
+    def test_scrap_none(self):
+        ActivateBase(self.brain_world).execute(self.game)
+        self.assert_pending(PendBrainWorld)
+
+        Scrap().execute(self.game)
+        self.assert_hand_count(3)
+        self.assert_deck_count(7)
+        self.assert_discard_count(0)
+
+    def test_scrap_one_from_hand_one_from_discard(self):
+        self._add_cards_to_discard(Viper())
+        targets = [self.game[Zones.HAND][0], self.game[Zones.DISCARD][0]]
+        ActivateBase(self.brain_world).execute(self.game)
+
+        self.assert_hand_count(3)
+        self.assert_deck_count(7)
+        self.assert_discard_count(1)
+        Scrap(*targets).execute(self.game)
+
+        self.assert_scrapped(targets[0])
+        self.assert_scrapped(targets[1])
+        self.assert_hand_count(4)
+        self.assert_deck_count(5)
+        self.assert_discard_count(0)
+
+    def test_scrap_one_from_hand_one_from_discard_one_card_to_draw(self):
+        self._add_cards_to_discard(Viper(), Viper())
+        self._clear_zones(Zones.DECK)
+        targets = [self.game[Zones.HAND][0], self.game[Zones.DISCARD][0]]
+        ActivateBase(self.brain_world).execute(self.game)
+
+        self.assert_hand_count(3)
+        self.assert_deck_count(0)
+        self.assert_discard_count(2)
+        Scrap(*targets).execute(self.game)
+
+        self.assert_scrapped(targets[0])
+        self.assert_scrapped(targets[1])
+        self.assert_hand_count(3)
+        self.assert_deck_count(0)
+        self.assert_discard_count(0)
+
+    def test_scrap_one_from_hand_one_from_discard_no_cards_to_draw(self):
+        self._add_cards_to_discard(Viper())
+        self._clear_zones(Zones.DECK)
+        targets = [self.game[Zones.HAND][0], self.game[Zones.DISCARD][0]]
+        ActivateBase(self.brain_world).execute(self.game)
+
+        self.assert_hand_count(3)
+        self.assert_deck_count(0)
+        self.assert_discard_count(1)
+        Scrap(*targets).execute(self.game)
+
+        self.assert_scrapped(targets[0])
+        self.assert_scrapped(targets[1])
+        self.assert_hand_count(2)
+        self.assert_deck_count(0)
         self.assert_discard_count(0)

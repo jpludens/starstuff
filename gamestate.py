@@ -34,6 +34,7 @@ class GameState(object):
         self.victor = None
         self.forced_discards = 0
         self.pending_effect = None
+        self.last_activated_card = None
 
     def __getitem__(self, key):
         try:
