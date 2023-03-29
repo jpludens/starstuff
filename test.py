@@ -3,11 +3,12 @@ from unittest import TestCase
 # Explorers TODO (lol)
 from cards import Scout, Viper, SpaceStation, BattleStation, BarterWorld, RoyalRedoubt, BlobWheel, BlobFighter, \
     Explorer, Cutter, Dreadnaught, TradePod, SurveyShip, PatrolMech, MissileBot, MachineBase, BattlePod, \
-    ImperialFighter, RecyclingStation, MechWorld, BrainWorld
-from effects import PendChoice, PendScrap, PendDiscard, PendRecycle, PendBrainWorld
+    ImperialFighter, RecyclingStation, MechWorld, BrainWorld, MissileMech, TradingPost
+from effects import PendChoice, PendScrap, PendDiscard, PendRecycle, PendBrainWorld, PendingDestroyBaseEffect
 from enums import Zones, ValueTypes, Triggers, Abilities, Factions
 from gamestate import GameState
-from move import PlayCard, ActivateBase, Attack, ActivateAlly, ActivateScrap, Choose, Scrap, EndTurn, Discard
+from move import PlayCard, ActivateBase, ActivateAlly, ActivateScrap, Choose, Scrap, EndTurn, Discard, AttackOpponent, \
+    AttackBase, DestroyBase
 import logging
 
 logging.getLogger().setLevel(logging.ERROR)
@@ -95,6 +96,10 @@ class StarstuffTests(TestCase):
         self.assertEqual(card.location, Zones.DISCARD)
         self.assertIn(card, self.game.opponent[Zones.DISCARD])
 
+    def assert_in_opponent_in_play(self, card):
+        self.assertEqual(card.location, Zones.IN_PLAY)
+        self.assertIn(card, self.game.opponent[Zones.IN_PLAY])
+
     def assert_opponent_discards(self, n):
         self.assertEqual(self.game.forced_discards, n)
 
@@ -157,58 +162,52 @@ class TestBases(StarstuffTests):
         self.assertRaises(KeyError, ActivateBase(self.base).execute, self.game)
 
 
-class TestAttack(StarstuffTests):
+class TestAttackOpponent(StarstuffTests):
     def test_normal_attack(self):
         self._set_damage(10)
-        Attack(self.game.opponent).execute(self.game)
+        AttackOpponent(self.game.opponent).execute(self.game)
 
         self.assert_opponent_authority(40)
         self.assertIsNone(self.game.victor)
 
-    def test_normal_attack_with_base(self):
-        self._add_bases_to_opponent(BarterWorld())
-        self._set_damage(10)
-        Attack(self.game.opponent).execute(self.game)
-
-        self.assert_opponent_authority(40)
-        self.assertIsNone(self.game.victor)
-
-    def test_winning_attack(self):
+    def test_winning_attack_with_base(self):
         self._set_damage(50)
-        Attack(self.game.opponent).execute(self.game)
+        self._add_bases_to_opponent(BarterWorld())
+        AttackOpponent(self.game.opponent).execute(self.game)
 
         self.assert_opponent_authority(0)
         self.assertEqual(self.game.victor, self.game.active_player.name)
 
+    def test_outpost_mechanic(self):
+        self._add_bases_to_opponent(RoyalRedoubt())
+        self.assertRaises(FileNotFoundError, AttackOpponent(self.game.opponent).execute, self.game)
+
+
+class TestAttackBase(StarstuffTests):
     def test_base_attack(self):
         self._set_damage(10)
         target = BarterWorld()
         self._add_bases_to_opponent(target)
-        Attack(target).execute(self.game)
+        AttackBase(target).execute(self.game)
 
         self.assert_opponent_authority(50)
         self.assert_in_opponent_discard(target)
         self.assert_damage(6)
 
-    def test_outpost_mechanic(self):
+    def test_outpost_attack(self):
         self._set_damage(10)
         outpost = RoyalRedoubt()
         self._add_bases_to_opponent(outpost)
 
-        # Can't attack the opponent
-        self.assertRaises(FileNotFoundError, Attack(self.game.opponent).execute, self.game)
-
         # Can't attack another base
         base = BarterWorld()
         self._add_bases_to_opponent(base)
-
-        self.assertRaises(FileNotFoundError, Attack(base).execute, self.game)
+        self.assertRaises(FileNotFoundError, AttackBase(base).execute, self.game)
 
         # But can attack the outpost
-        Attack(outpost).execute(self.game)
-
-        self.assert_opponent_authority(50)
+        AttackBase(outpost).execute(self.game)
         self.assert_in_opponent_discard(outpost)
+        self.assert_opponent_authority(50)
         self.assert_damage(4)
 
 
@@ -734,3 +733,52 @@ class TestBrainWorld(StarstuffTests):
         self.assert_hand_count(2)
         self.assert_deck_count(0)
         self.assert_discard_count(0)
+
+
+class TestDestroyBaseEffect(StarstuffTests):
+    def setUp(self):
+        super().setUp()
+        self.missile_mech = MissileMech()
+        self._add_cards_to_hand(self.missile_mech)
+        self.base = BarterWorld()
+        self.outpost = TradingPost()
+
+    def test_no_bases(self):
+        PlayCard(self.missile_mech).execute(self.game)
+        self.assert_pending(None)
+
+    def test_decline(self):
+        self._add_bases_to_opponent(self.base)
+        PlayCard(self.missile_mech).execute(self.game)
+
+        self.assert_pending(PendingDestroyBaseEffect)
+
+        DestroyBase().execute(self.game)
+        self.assert_pending(None)
+        self.assertEqual(len(self.game.opponent[Zones.IN_PLAY]), 1)
+
+    def test_destroy_single_base(self):
+        self._add_bases_to_opponent(self.base)
+        PlayCard(self.missile_mech).execute(self.game)
+
+        self.assert_pending(PendingDestroyBaseEffect)
+
+        DestroyBase(self.base).execute(self.game)
+        self.assert_pending(None)
+        self.assert_in_opponent_discard(self.base)
+
+    def test_destroy_base_with_outpost(self):
+        self._add_bases_to_opponent(self.base, self.outpost)
+        PlayCard(self.missile_mech).execute(self.game)
+
+        self.assert_pending(PendingDestroyBaseEffect)
+        self.assertRaises(FileNotFoundError, DestroyBase(self.base).execute, self.game)
+
+    def test_destroy_outpost_with_base(self):
+        self._add_bases_to_opponent(self.base, self.outpost)
+        PlayCard(self.missile_mech).execute(self.game)
+
+        DestroyBase(self.outpost).execute(self.game)
+        self.assert_pending(None)
+        self.assert_in_opponent_discard(self.outpost)
+        self.assert_in_opponent_in_play(self.base)

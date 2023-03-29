@@ -1,7 +1,8 @@
 import logging
+from functools import wraps
 
 from cards import Explorer, Card
-from effects import PendScrap, PendChoice, PendDiscard
+from effects import PendScrap, PendChoice, PendDiscard, DestroyBaseEffect, PendingDestroyBaseEffect
 from enums import Zones, CardTypes, Triggers, ValueTypes
 from util import move_list_item
 
@@ -9,7 +10,6 @@ from util import move_list_item
 class Move(object):
     def execute(self, gamestate):
         raise NotImplementedError
-
 
 class AbilityActivation(Move):
     def __init__(self, card, trigger):
@@ -97,48 +97,57 @@ class BuyCard(Move):
             gamestate.active_player[ValueTypes.TRADE]))
 
 
-class Attack(Move):
-    def __init__(self, target):
-        self.target = target
+class AttackBase(Move):
+    def __init__(self, base):
+        self.base = base
+
+    def execute(self, gamestate):
+        if self.base.card_type != CardTypes.OUTPOST:
+            if any([c.card_type == CardTypes.OUTPOST for c in gamestate.opponent[Zones.IN_PLAY]]):
+                raise FileNotFoundError
+
+        gamestate.active_player[ValueTypes.DAMAGE] -= self.base.defense
+        DestroyBaseEffect(self.base).apply(gamestate)
+
+        logging.warning("{} has {} DAMAGE remaining".format(
+            gamestate.active_player.name,
+            gamestate.active_player[ValueTypes.AUTHORITY]))
+
+
+class AttackOpponent(Move):
+    def __init__(self, opponent):
+        self.opponent = opponent
 
     def execute(self, gamestate):
         opponent_has_outpost = any([c.card_type == CardTypes.OUTPOST for c in gamestate.opponent[Zones.IN_PLAY]])
+        if opponent_has_outpost:
+            raise FileNotFoundError
 
-        # Attack Base
-        if isinstance(self.target, Card):
-            if opponent_has_outpost and self.target.card_type != CardTypes.OUTPOST:
-                raise FileNotFoundError
+        logging.warning("{} is ATTACKING {} for {} damage!".format(
+            gamestate.active_player.name,
+            self.opponent.name,
+            gamestate.active_player[ValueTypes.DAMAGE]))
 
-            logging.warning("{} is ATTACKING {} for {} damage!".format(
-                gamestate.active_player.name,
-                self.target.name,
-                self.target.defense))
+        self.opponent[ValueTypes.AUTHORITY] -= gamestate.active_player[ValueTypes.DAMAGE]
+        gamestate.active_player[ValueTypes.DAMAGE] = 0
 
-            gamestate.active_player[ValueTypes.DAMAGE] -= self.target.defense
-            self.target.move_to(Zones.DISCARD)
-            move_list_item(self.target, gamestate.opponent[Zones.IN_PLAY], gamestate.opponent[Zones.DISCARD])
+        logging.warning("{} has {} AUTHORITY remaining".format(self.opponent.name,
+                                                               self.opponent[ValueTypes.AUTHORITY]))
 
-            logging.warning("{} has {} DAMAGE remaining".format(
-                gamestate.active_player.name,
-                gamestate.active_player[ValueTypes.AUTHORITY]))
+        if gamestate.opponent[ValueTypes.AUTHORITY] <= 0:
+            gamestate.victor = gamestate.active_player.name
 
-        # Attack Opponent
-        else:
-            if opponent_has_outpost:
-                raise FileNotFoundError
-            logging.warning("{} is ATTACKING {} for {} damage!".format(
-                gamestate.active_player.name,
-                self.target.name,
-                gamestate.active_player[ValueTypes.DAMAGE]))
 
-            self.target[ValueTypes.AUTHORITY] -= gamestate.active_player[ValueTypes.DAMAGE]
-            gamestate.active_player[ValueTypes.DAMAGE] = 0
+class DestroyBase(Move):
+    def __init__(self, target=None):
+        self.target = target
 
-            logging.warning("{} has {} AUTHORITY remaining".format(self.target.name,
-                                                                   self.target[ValueTypes.AUTHORITY]))
-
-            if gamestate.opponent[ValueTypes.AUTHORITY] <= 0:
-                gamestate.victor = gamestate.active_player.name
+    def execute(self, gamestate):
+        assert isinstance(gamestate.pending_effect, PendingDestroyBaseEffect)
+        opponent_has_outpost = any([c.card_type == CardTypes.OUTPOST for c in gamestate.opponent[Zones.IN_PLAY]])
+        if opponent_has_outpost and self.target.card_type != CardTypes.OUTPOST:
+            raise FileNotFoundError
+        gamestate.pending_effect.resolve(self.target)
 
 
 class EndTurn(Move):

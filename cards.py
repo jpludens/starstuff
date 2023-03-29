@@ -1,7 +1,7 @@
 import logging
 
 from effects import ValueEffect, DrawEffect, OpponentDiscardEffect, PendChoice, PendScrap, PendRecycle, \
-    GainFactionEffect, PendBrainWorld
+    GainFactionEffect, PendBrainWorld, PendingDestroyBaseEffect
 from enums import Abilities, Triggers, CardTypes, Factions, ValueTypes, Zones
 
 
@@ -9,6 +9,7 @@ DRAW_ONE = DrawEffect(1)
 SCRAP_FROM_TRADE_ROW = PendScrap(Zones.TRADE_ROW)
 SCRAP_FROM_HAND_OR_DISCARD = PendScrap(Zones.HAND, Zones.DISCARD)
 DISCARD = OpponentDiscardEffect()
+DESTROY_BASE = PendingDestroyBaseEffect()
 
 
 class Card(object):
@@ -55,12 +56,11 @@ class Card(object):
             if isinstance(k, ValueTypes):
                 effects.append(ValueEffect(k, v))
             # TODO: This sure has become unwieldy
-            elif k in [Abilities.DRAW, Abilities.SCRAP, Abilities.DISCARD, Abilities.RECYCLE, Abilities.MECH_WORLD,
-                       Abilities.BRAIN_WORLD]:
-                effects.append(v)
             elif k == Abilities.CHOICE:
                 choices = {ck: ValueEffect(ck, cv) if isinstance(ck, ValueTypes) else cv for ck, cv in v.items()}
                 effects.append(PendChoice(choices))
+            elif k in Abilities:
+                effects.append(v)
             else:
                 logging.warning("Ignoring ability - {}: {}".format(k, v))
         return effects
@@ -184,7 +184,8 @@ class BlobDestroyer(Card):
             ValueTypes.DAMAGE: 6
         },
         Triggers.ALLY: {
-            Abilities.UNIMPLEMENTED: "Blow Base",
+            # These need to trigger unorderly before having this actually destroy a base
+            Abilities.UNIMPLEMENTED: "Blow up a Base",
             Abilities.SCRAP: SCRAP_FROM_TRADE_ROW
         }
     }
@@ -390,7 +391,7 @@ class CommandShip(Card):
             Abilities.DRAW: DrawEffect(2)
         },
         Triggers.ALLY: {
-            Abilities.UNIMPLEMENTED: "Blow Base"
+            Abilities.DESTROY_BASE: DESTROY_BASE
         }
     }
 
@@ -465,7 +466,7 @@ class PortOfCall(Card):
         },
         Triggers.SCRAP: {
             Abilities.DRAW: DRAW_ONE,
-            Abilities.UNIMPLEMENTED: "Blow Base"
+            Abilities.DESTROY_BASE: DESTROY_BASE
         }
     }
 
@@ -590,7 +591,7 @@ class MissileMech(Card):
     abilities = {
         Triggers.SHIP: {
             ValueTypes.DAMAGE: 6,
-            Abilities.UNIMPLEMENTED: "Blow Base"
+            Abilities.DESTROY_BASE: DESTROY_BASE
         },
         Triggers.ALLY: {
             Abilities.DRAW: DRAW_ONE
@@ -748,7 +749,8 @@ class Battlecruiser(Card):
             Abilities.DISCARD: DISCARD
         },
         Triggers.SCRAP: {
-            Abilities.UNIMPLEMENTED: "Draw AND Blow Base",
+            Abilities.DRAW: DRAW_ONE,
+            Abilities.DESTROY_BASE: DESTROY_BASE
         }
     }
 

@@ -60,6 +60,21 @@ class GainFactionEffect(Effect):
         gamestate.last_activated_card.active_factions.update(self.factions)
 
 
+class DestroyBaseEffect(Effect):
+    def __init__(self, base=None):
+        self.base = base
+
+    def apply(self, gamestate):
+        if self.base:
+            logging.warning("{} DESTROYS {}".format(gamestate.active_player.name, self.base.name))
+            self.base.move_to(Zones.DISCARD)
+            move_list_item(self.base,
+                           gamestate.opponent[Zones.IN_PLAY],
+                           gamestate.opponent[Zones.DISCARD])
+        else:
+            logging.warning("{} does not destroy a base".format(gamestate.active_player.name))
+
+
 # Pending Effects (requiring additional input from a player)
 class PendEffect(Effect, ABC):
     def __init__(self):
@@ -77,6 +92,16 @@ class PendEffect(Effect, ABC):
 
     def _resolve(self, *args, **kwargs):
         raise NotImplementedError
+
+
+class PendingDestroyBaseEffect(PendEffect):
+    def apply(self, gamestate):
+        if any(gamestate.opponent[Zones.IN_PLAY]):
+            logging.warning("{} can DESTROY a Base".format(gamestate.active_player.name))
+            super().apply(gamestate)
+
+    def _resolve(self, base):
+        DestroyBaseEffect(base).apply(self.gamestate)
 
 
 class ChoiceEffect(Effect):
@@ -163,7 +188,8 @@ class DiscardEffect(Effect):
     def apply(self, gamestate):
         if self.cards:
             for card in self.cards:
-                logging.warning("{} DISCARDS {}".format(gamestate.active_player.name, card.name))
+                logging.warning("{} DISCARDS {}".format(
+                    gamestate.active_player.name, [card.name for card in self.cards]))
                 card.move_to(Zones.DISCARD)
                 move_list_item(card, gamestate[Zones.HAND], gamestate[Zones.DISCARD])
         else:

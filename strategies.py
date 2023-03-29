@@ -1,9 +1,9 @@
 from random import choice, sample, randint
 from cards import Explorer, Viper, Scout, MachineBase
-from effects import PendDiscard, PendScrap
+from effects import PendDiscard, PendScrap, PendingDestroyBaseEffect
 from enums import Triggers, CardTypes, ValueTypes, Zones, Factions, Abilities
-from move import PlayCard, ActivateBase, ActivateAlly, ActivateScrap, BuyCard, EndTurn, Attack, Choose, Scrap, \
-    Discard
+from move import PlayCard, ActivateBase, ActivateAlly, ActivateScrap, BuyCard, EndTurn, Choose, Scrap, \
+    Discard, AttackBase, AttackOpponent, DestroyBase
 
 
 class Strategy(object):
@@ -60,7 +60,7 @@ class Strategy(object):
 
     @classmethod
     def _get_attack_move(cls, gamestate, target_base=None):
-        return [Attack(target_base if target_base else gamestate.opponent)]
+        return [AttackBase(target_base) if target_base else AttackOpponent(gamestate.opponent)]
 
     @classmethod
     def _get_end_turn_move(cls):
@@ -99,7 +99,7 @@ class Strategy(object):
         moves = []
         for card in gamestate.opponent[Zones.IN_PLAY]:
             if card.card_type == CardTypes.OUTPOST:
-                moves.append(Attack(card))
+                moves.append(AttackBase(card))
         return moves
 
     @classmethod
@@ -136,6 +136,18 @@ class Strategy(object):
                 moves.append(ActivateAlly(card))
         return moves
 
+    @classmethod
+    def _get_target_base(cls, gamestate):
+        bases = gamestate.opponent[Zones.IN_PLAY]
+        if bases:
+            outposts = [b for b in bases if b.card_type == CardTypes.OUTPOST]
+            if outposts:
+                return outposts[0]
+            return bases[0]
+        return None
+
+
+
 # class BasicStrategy(Strategy):
 #     def get_moves(self, gamestate):
 #         sequence = [self.get_purchases,
@@ -164,12 +176,12 @@ class FactionStrategy(Strategy):
         if isinstance(gamestate.pending_effect, PendDiscard):
             if gamestate.pending_effect.mandatory:
                 if gamestate.pending_effect.up_to >= len(gamestate[Zones.HAND]):
-                    return [Discard(gamestate[Zones.HAND])]
-                return [Discard(sample(gamestate[Zones.HAND], gamestate.pending_effect.up_to))]
+                    return [Discard(*gamestate[Zones.HAND])]
+                return [Discard(*sample(gamestate[Zones.HAND], gamestate.pending_effect.up_to))]
             number_to_discard = randint(0, gamestate.pending_effect.up_to)
             if number_to_discard >= len(gamestate[Zones.HAND]):
-                return [Discard(gamestate[Zones.HAND])]
-            return [Discard(sample(gamestate[Zones.HAND], number_to_discard))]
+                return [Discard(*gamestate[Zones.HAND])]
+            return [Discard(*sample(gamestate[Zones.HAND], number_to_discard))]
 
         playerstate = gamestate.active_player
 
@@ -177,6 +189,9 @@ class FactionStrategy(Strategy):
         if isinstance(gamestate.pending_effect, PendScrap) and gamestate.pending_effect.mandatory:
             if gamestate.active_player[Zones.HAND]:
                 return [Scrap(gamestate.active_player[Zones.HAND][0])]
+
+        if isinstance(gamestate.pending_effect, PendingDestroyBaseEffect):
+            return [DestroyBase(self._get_target_base(gamestate))]
 
         # If we have bases, activate them
         for card in playerstate[Zones.IN_PLAY]:
@@ -223,15 +238,10 @@ class FactionStrategy(Strategy):
 
         # If we can't win and there's an outpost, destroy it; or destroy a base; or attack the opponent
         if current_damage > 0:
-            bases = gamestate.opponent[Zones.IN_PLAY]
-            if bases:
-                outposts = [b for b in bases if b.card_type == CardTypes.OUTPOST]
-                if outposts:
-                    if outposts[0].defense <= current_damage:
-                        return self._get_attack_move(gamestate, target_base=outposts[0])
-                if bases[0].defense <= current_damage:
-                    return self._get_attack_move(gamestate, target_base=bases[0])
-            return self._get_attack_move(gamestate)
+            base_to_hit = self._get_target_base(gamestate)
+            if base_to_hit:
+                return [AttackBase(base_to_hit)]
+            return [AttackOpponent(gamestate.opponent)]
 
         # If we can't Attack, End Turn
         return self._get_end_turn_move()
