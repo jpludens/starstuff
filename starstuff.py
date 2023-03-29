@@ -1,21 +1,27 @@
 # Goal: Implement remaining abilities
-#    Scrap
-#      Brain World
-#    Destroy Base
+#    Destroy Base (except Blob Destroyer)
+#    Stealth Needle
+#          Target move
 #    Blob Carrier
+
+#    Blob Destroyer
+#         requires multiple pending effects
+#         I refuse to treat them as ordered at any point in the code whatsoever
+#         card.abilities will map triggers to /lists/
+#         values will be a tuple so that initializing cards doesn't require creating a bunch of ValueEffects
+#         probably just create ChoiceEffect at the card declaration instead of in trigger_abilities
+#         blob destroyers will be a list of effects instead of a single effect
+#    Fleet HQ
+#           introduce a check that examines all moves for Actions.Play with a card with CardType.SHIP
+#           effect needs to end when base leaves play
+#           add a "source" field to effects
 #    Freighter / Central Office
-#         change "buy" to "acquire"
 #         count available topdecks
-#         "buy" is now a special acquire that spends trade
 #         "topdeck" is like buy ... but topdecks. both reduce tracked topdeck counts
 #    Embassy Yacht
 #           Conditionality
 #    Blob World
 #          gamestate needs to keep an examinable log of turn actions to be searched for Actions.PLAY/Factions.BLOB
-#    Stealth Needle
-#          Target move
-#    Fleet HQ
-#           introduce a check that examines all moves for Actions.Play with a card with CardType.SHIP
 
 # Goal: Use a Strategy class to trigger deterministic abilities
 # Goal: use a Strategy class to mimic app
@@ -26,6 +32,8 @@
 #       (eg, x combat guaranteed y combat possible per cycle; velocity (turns/cycle))
 # Goal: Create a data visualation scheme for deck progress throughout a game
 #       (eg, graph combat and trade potential over time)
+
+# Goal: Create a web interface for designing strategies
 
 from collections import Counter
 from pprint import PrettyPrinter
