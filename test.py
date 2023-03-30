@@ -3,7 +3,7 @@ from unittest import TestCase
 # Explorers TODO (lol)
 from cards import Scout, Viper, SpaceStation, BattleStation, BarterWorld, RoyalRedoubt, BlobWheel, BlobFighter, \
     Explorer, Cutter, Dreadnaught, TradePod, SurveyShip, PatrolMech, MissileBot, MachineBase, BattlePod, \
-    ImperialFighter, RecyclingStation, MechWorld, BrainWorld, MissileMech, TradingPost
+    ImperialFighter, RecyclingStation, MechWorld, BrainWorld, MissileMech, TradingPost, BlobDestroyer
 from effects import PendChoice, PendScrap, PendDiscard, PendRecycle, PendBrainWorld, PendingDestroyBaseEffect, \
     GainTrade, GainAuthority, GainDamage
 from enums import Zones, ValueTypes, Triggers, Factions
@@ -74,6 +74,10 @@ class StarstuffTests(TestCase):
         self.assertEqual(card.location, Zones.HAND)
         self.assertIn(card, self.game[Zones.HAND])
 
+    def assert_in_trade_row(self, card):
+        self.assertEqual(card.location, Zones.TRADE_ROW)
+        self.assertIn(card, self.game[Zones.TRADE_ROW])
+
     def assert_scrapped(self, card):
         self.assertEqual(card.location, Zones.SCRAP_HEAP)
 
@@ -104,11 +108,10 @@ class StarstuffTests(TestCase):
     def assert_opponent_discards(self, n):
         self.assertEqual(self.game.forced_discards, n)
 
-    def assert_pending(self, pending_type):
-        if pending_type:
+    def assert_pending(self, *pending_types):
+        self.assertEqual(len(pending_types), len(self.game.pending_effects))
+        for pending_type in pending_types:
             self.assertIn(pending_type, [type(e) for e in self.game.pending_effects])
-        else:
-            self.assertListEqual(self.game.pending_effects, [])
 
 
 class TestShips(StarstuffTests):
@@ -364,7 +367,7 @@ class TestChoiceEffect(StarstuffTests):
         self.assert_damage(0)
 
         Choose(GainTrade).execute(self.game)
-        self.assert_pending(None)
+        self.assert_pending()
         self.assert_trade(3)
         self.assert_damage(0)
 
@@ -381,7 +384,7 @@ class TestChoiceEffect(StarstuffTests):
         self.assert_trade(0)
 
         PlayCard(base1).execute(self.game)
-        self.assert_pending(None)
+        self.assert_pending()
         ActivateBase(base1).execute(self.game)
         self.assert_pending(PendChoice)
         self.assert_authority(50)
@@ -414,7 +417,7 @@ class TestMachineCultScrapEffect(StarstuffTests):
         Scrap(target).execute(self.game)
         self.assert_hand_count(2)
         self.assert_scrapped(target)
-        self.assert_pending(None)
+        self.assert_pending()
 
     def test_scrap_from_discard(self):
         PlayCard(self.missile_bot).execute(self.game)
@@ -425,7 +428,7 @@ class TestMachineCultScrapEffect(StarstuffTests):
         Scrap(target).execute(self.game)
         self.assert_discard_count(0)
         self.assert_scrapped(target)
-        self.assert_pending(None)
+        self.assert_pending()
 
     def test_scrap_nothing(self):
         PlayCard(self.missile_bot).execute(self.game)
@@ -436,7 +439,7 @@ class TestMachineCultScrapEffect(StarstuffTests):
         Scrap().execute(self.game)
         self.assert_hand_count(3)
         self.assert_discard_count(1)
-        self.assert_pending(None)
+        self.assert_pending()
 
     def test_scrap_invalid_target(self):
         PlayCard(self.missile_bot).execute(self.game)
@@ -448,7 +451,7 @@ class TestMachineCultScrapEffect(StarstuffTests):
         self._clear_zones(Zones.HAND)
         self._add_cards_to_hand(self.missile_bot)
         PlayCard(self.missile_bot).execute(self.game)
-        self.assert_pending(None)
+        self.assert_pending()
 
 
 class TestMachineBase(StarstuffTests):
@@ -493,7 +496,7 @@ class TestBlobScrapEffect(StarstuffTests):
         Scrap(target).execute(self.game)
         self.assertEqual(len(self.game[Zones.TRADE_DECK]), cards_in_trade_deck_at_start - 1)
         self.assert_scrapped(target)
-        self.assert_pending(None)
+        self.assert_pending()
 
     def test_decline_scrap_from_trade_row(self):
         PlayCard(self.battle_pod).execute(self.game)
@@ -502,7 +505,7 @@ class TestBlobScrapEffect(StarstuffTests):
 
         Scrap().execute(self.game)
         self.assertEqual(len(self.game[Zones.TRADE_DECK]), cards_in_trade_deck_at_start)
-        self.assert_pending(None)
+        self.assert_pending()
 
     def test_with_empty_trade_deck(self):
         self.game[Zones.TRADE_DECK].clear()
@@ -513,14 +516,14 @@ class TestBlobScrapEffect(StarstuffTests):
 
         Scrap(self.game[Zones.TRADE_ROW][0]).execute(self.game)
         self.assertEqual(len(self.game[Zones.TRADE_ROW]), 3)
-        self.assert_pending(None)
+        self.assert_pending()
 
     def test_with_empty_trade_row(self):
         self.game[Zones.TRADE_DECK].clear()
         self.game[Zones.TRADE_ROW].clear()
 
         PlayCard(self.battle_pod).execute(self.game)
-        self.assert_pending(None)
+        self.assert_pending()
 
 
 class TestStarEmpireDiscardEffect(StarstuffTests):
@@ -545,7 +548,7 @@ class TestStarEmpireDiscardEffect(StarstuffTests):
 
         self.assertRaises(FileNotFoundError, Discard().execute, self.game)
         Discard(self.game[Zones.HAND][0]).execute(self.game)
-        self.assert_pending(None)
+        self.assert_pending()
         self.assert_hand_count(4)
         # TODO: move besides discard should fail
 
@@ -562,7 +565,7 @@ class TestStarEmpireDiscardEffect(StarstuffTests):
 
         self.assertRaises(FileNotFoundError, Discard(self.game[Zones.HAND][0]).execute, self.game)
         Discard(*self.game[Zones.HAND]).execute(self.game)
-        self.assert_pending(None)
+        self.assert_pending()
         self.assert_hand_count(0)
         # TODO: move besides discard should fail
 
@@ -583,7 +586,7 @@ class TestRecyclingStation(StarstuffTests):
 
     def test_choose_trade(self):
         Choose(GainTrade).execute(self.game)
-        self.assert_pending(None)
+        self.assert_pending()
         self.assert_trade(1)
 
     def test_decline_discard(self):
@@ -668,7 +671,7 @@ class TestBrainWorld(StarstuffTests):
         self.assert_discard_count(0)
 
         ActivateBase(self.brain_world).execute(self.game)
-        self.assert_pending(None)
+        self.assert_pending()
         self.assert_hand_count(0)
         self.assert_deck_count(7)
         self.assert_discard_count(0)
@@ -743,7 +746,7 @@ class TestDestroyBaseEffect(StarstuffTests):
 
     def test_no_bases(self):
         PlayCard(self.missile_mech).execute(self.game)
-        self.assert_pending(None)
+        self.assert_pending()
 
     def test_decline(self):
         self._add_bases_to_opponent(self.base)
@@ -752,7 +755,7 @@ class TestDestroyBaseEffect(StarstuffTests):
         self.assert_pending(PendingDestroyBaseEffect)
 
         DestroyBase().execute(self.game)
-        self.assert_pending(None)
+        self.assert_pending()
         self.assertEqual(len(self.game.opponent[Zones.IN_PLAY]), 1)
 
     def test_destroy_single_base(self):
@@ -762,7 +765,7 @@ class TestDestroyBaseEffect(StarstuffTests):
         self.assert_pending(PendingDestroyBaseEffect)
 
         DestroyBase(self.base).execute(self.game)
-        self.assert_pending(None)
+        self.assert_pending()
         self.assert_in_opponent_discard(self.base)
 
     def test_destroy_base_with_outpost(self):
@@ -777,6 +780,102 @@ class TestDestroyBaseEffect(StarstuffTests):
         PlayCard(self.missile_mech).execute(self.game)
 
         DestroyBase(self.outpost).execute(self.game)
-        self.assert_pending(None)
+        self.assert_pending()
         self.assert_in_opponent_discard(self.outpost)
         self.assert_in_opponent_in_play(self.base)
+
+
+class TestMultiplePendingEffectsViaBlobDestroyer(StarstuffTests):
+    def setUp(self):
+        super().setUp()
+        blob_wheel = BlobWheel()
+        self._add_cards_to_hand(blob_wheel)
+        PlayCard(blob_wheel).execute(self.game)
+
+        self.blob_destroyer = BlobDestroyer()
+        self._add_cards_to_hand(self.blob_destroyer)
+
+        self.base = BarterWorld()
+        self.scrap_target = self.game[Zones.TRADE_ROW][0]
+
+    def test_decline_both(self):
+        self._add_bases_to_opponent(self.base)
+        PlayCard(self.blob_destroyer).execute(self.game)
+        self.assert_pending()
+
+        ActivateAlly(self.blob_destroyer).execute(self.game)
+        self.assert_pending(PendingDestroyBaseEffect, PendScrap)
+
+        Scrap().execute(self.game)
+        self.assert_pending(PendingDestroyBaseEffect)
+
+        DestroyBase().execute(self.game)
+        self.assert_pending()
+
+    def test_no_base(self):
+        PlayCard(self.blob_destroyer).execute(self.game)
+        self.assert_pending()
+
+        ActivateAlly(self.blob_destroyer).execute(self.game)
+        self.assert_pending(PendScrap)
+
+        Scrap().execute(self.game)
+        self.assert_pending()
+
+    def test_no_trade_row(self):
+        self._add_bases_to_opponent(self.base)
+        self.game[Zones.TRADE_ROW].clear()
+        PlayCard(self.blob_destroyer).execute(self.game)
+        self.assert_pending()
+
+        ActivateAlly(self.blob_destroyer).execute(self.game)
+        self.assert_pending(PendingDestroyBaseEffect)
+
+        DestroyBase().execute(self.game)
+        self.assert_pending()
+
+    def test_no_base_no_trade_row(self):
+        self.game[Zones.TRADE_ROW].clear()
+        PlayCard(self.blob_destroyer).execute(self.game)
+        self.assert_pending()
+
+        ActivateAlly(self.blob_destroyer).execute(self.game)
+        self.assert_pending()
+
+    def test_destroy_base_then_scrap(self):
+        self._add_bases_to_opponent(self.base)
+        PlayCard(self.blob_destroyer).execute(self.game)
+        self.assert_pending()
+
+        ActivateAlly(self.blob_destroyer).execute(self.game)
+        self.assert_pending(PendingDestroyBaseEffect, PendScrap)
+
+        initial_trade_deck_count = len(self.game[Zones.TRADE_DECK])
+        Scrap(self.scrap_target).execute(self.game)
+        self.assert_pending(PendingDestroyBaseEffect)
+        self.assert_scrapped(self.scrap_target)
+        self.assertEqual(len(self.game[Zones.TRADE_DECK]), initial_trade_deck_count - 1)
+
+        self.assert_in_opponent_in_play(self.base)
+        DestroyBase(self.base).execute(self.game)
+        self.assert_pending()
+        self.assert_in_opponent_discard(self.base)
+
+    def test_scrap_then_destroy_base(self):
+        self._add_bases_to_opponent(self.base)
+        PlayCard(self.blob_destroyer).execute(self.game)
+        self.assert_pending()
+
+        ActivateAlly(self.blob_destroyer).execute(self.game)
+        self.assert_pending(PendingDestroyBaseEffect, PendScrap)
+
+        DestroyBase(self.base).execute(self.game)
+        self.assert_pending(PendScrap)
+        self.assert_in_opponent_discard(self.base)
+
+        self.assert_in_trade_row(self.scrap_target)
+        initial_trade_deck_count = len(self.game[Zones.TRADE_DECK])
+        Scrap(self.scrap_target).execute(self.game)
+        self.assert_pending()
+        self.assert_scrapped(self.scrap_target)
+        self.assertEqual(len(self.game[Zones.TRADE_DECK]), initial_trade_deck_count - 1)

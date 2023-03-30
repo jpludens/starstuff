@@ -181,8 +181,7 @@ class BlobDestroyer(Card):
             GainDamage(6)
         },
         Triggers.ALLY: {
-            # These need to trigger unorderly before having this actually destroy a base
-            "Blow up a Base",
+            DESTROY_BASE,
             SCRAP_FROM_TRADE_ROW
         }
     }
