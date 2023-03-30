@@ -1,7 +1,7 @@
 from random import choice, sample, randint
 from cards import Explorer, Viper, Scout, MachineBase
-from effects import PendDiscard, PendScrap, PendingDestroyBaseEffect
-from enums import Triggers, CardTypes, ValueTypes, Zones, Factions, Abilities
+from effects import PendDiscard, PendScrap, PendingDestroyBaseEffect, PendChoice, PendRecycle, GainDamage
+from enums import Triggers, CardTypes, ValueTypes, Zones, Factions
 from move import PlayCard, ActivateBase, ActivateAlly, ActivateScrap, BuyCard, EndTurn, Choose, Scrap, \
     Discard, AttackBase, AttackOpponent, DestroyBase
 
@@ -14,11 +14,13 @@ class Strategy(object):
             moves.append(PlayCard(card))
             if card.card_type == CardTypes.SHIP:
                 abilities = card.abilities[Triggers.SHIP]
-                if Abilities.CHOICE in abilities:
-                    chosen_choice = choice(list(card.abilities[Triggers.SHIP][Abilities.CHOICE].keys()))
-                    moves.append(Choose(chosen_choice))
-                if Abilities.SCRAP in abilities:
-                    raise RuntimeError  # Scrap cards should be getting played individually
+                for ability in abilities:
+                    if PendChoice in abilities:
+                        if isinstance(ability, PendChoice):
+                            chosen_choice = type(choice(list(ability.choices.keys())))
+                            moves.append(Choose(chosen_choice))
+                    if PendScrap in abilities:
+                        raise RuntimeError  # Scrap cards should be getting played individually
         return moves
 
     @classmethod
@@ -68,21 +70,21 @@ class Strategy(object):
 
     @classmethod
     def _get_activate_base_move(cls, gamestate, card):
-        if Abilities.CHOICE in card.abilities[Triggers.BASE]:
-            chosen_choice = choice(list(card.abilities[Triggers.BASE][Abilities.CHOICE].keys()))
-            if chosen_choice == Abilities.RECYCLE:
-                pass
-            else:
-                return [ActivateBase(card), Choose(chosen_choice)]
-        if Abilities.SCRAP in card.abilities[Triggers.BASE]:
-            if not isinstance(card, MachineBase):  # Handled at top level because the DRAW provides more info/options
-                scrap_effect = card.abilities[Triggers.BASE][Abilities.SCRAP]
-                # Only include a scrap move if there's anything available to scrap
-                if any([gamestate[z] for z in scrap_effect.zones]):
-                    scrap_card = cls._get_card_to_scrap(gamestate, scrap_effect)
-                    return [ActivateBase(card), Scrap(scrap_card) if scrap_card else Scrap()]
-                else:
+        for ability in card.abilities[Triggers.BASE]:
+            if isinstance(ability, PendChoice):
+                chosen_choice = choice(list(ability.choices.keys()))
+                if isinstance(ability, PendRecycle):
                     pass
+                else:
+                    return [ActivateBase(card), Choose(chosen_choice)]
+            if isinstance(ability, PendScrap):
+                if not isinstance(card, MachineBase):  # Handled at top level bc the DRAW provides more info/options
+                    # Only include a scrap move if there's anything available to scrap
+                    if any([gamestate[z] for z in ability.zones]):
+                        scrap_card = cls._get_card_to_scrap(gamestate, ability)
+                        return [ActivateBase(card), Scrap(scrap_card) if scrap_card else Scrap()]
+                    else:
+                        pass
         return [ActivateBase(card)]
 
     @classmethod
@@ -115,7 +117,8 @@ class Strategy(object):
         total = 0
         for card in gamestate.active_player[Zones.IN_PLAY]:
             scrap_ability = card.abilities.get(Triggers.SCRAP, {})
-            total += scrap_ability.get(ValueTypes.DAMAGE, 0)
+            if isinstance(scrap_ability, GainDamage):
+                total += scrap_ability.amount
         return total
 
     @classmethod
@@ -123,7 +126,7 @@ class Strategy(object):
         scrap_moves = []
         for card in gamestate.active_player[Zones.IN_PLAY]:
             scrap_ability = card.abilities.get(Triggers.SCRAP, {})
-            if scrap_ability.get(ValueTypes.DAMAGE) is not None:
+            if isinstance(scrap_ability, GainDamage):
                 scrap_moves.append(ActivateScrap(card))
         return scrap_moves
 
@@ -145,7 +148,6 @@ class Strategy(object):
                 return outposts[0]
             return bases[0]
         return None
-
 
 
 # class BasicStrategy(Strategy):
@@ -200,11 +202,13 @@ class FactionStrategy(Strategy):
 
         # If we have any ships with scrap abilities, play them
         scrap_ships = [card for card in playerstate[Zones.HAND]
-                       if card.abilities.get(Triggers.SHIP, {}).get(Abilities.SCRAP)]
+                       if card.has_ability(PendScrap, triggers=[Triggers.SHIP])]
         if scrap_ships:
+            x = [e for e in scrap_ships[0].abilities[Triggers.SHIP]]
             return self._get_play_scrap_ship_moves(gamestate,
                                                    scrap_ships[0],
-                                                   scrap_ships[0].abilities[Triggers.SHIP][Abilities.SCRAP])
+                                                   [e for e in scrap_ships[0].abilities[Triggers.SHIP]
+                                                    if isinstance(e, PendScrap)][0])
 
         # If we have cards, play them
         if playerstate[Zones.HAND]:

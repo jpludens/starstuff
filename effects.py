@@ -1,7 +1,7 @@
 import logging
 from abc import ABC
 
-from enums import Zones
+from enums import Zones, ValueTypes
 from util import move_list_item
 
 
@@ -22,6 +22,24 @@ class ValueEffect(Effect):
         player[self.value_type] += self.amount
         logging.warning("{} GAINS {} {} ({})".format(
             player.name, self.amount, self.value_type.name, player[self.value_type]))
+
+    def __str__(self):
+        return "{} {}".format(self.amount, self.value_type.name)
+
+
+class GainAuthority(ValueEffect):
+    def __init__(self, amount):
+        super().__init__(ValueTypes.AUTHORITY, amount)
+
+
+class GainDamage(ValueEffect):
+    def __init__(self, amount):
+        super().__init__(ValueTypes.DAMAGE, amount)
+
+
+class GainTrade(ValueEffect):
+    def __init__(self, amount):
+        super().__init__(ValueTypes.TRADE, amount)
 
 
 class DrawEffect(Effect):
@@ -115,17 +133,14 @@ class ChoiceEffect(Effect):
 class PendChoice(PendEffect):
     def __init__(self, choices):
         super().__init__()
-        self.choices = choices
+        self.choices = {type(c): c for c in choices}
 
     def apply(self, gamestate):
         super().apply(gamestate)
-        # TODO: Adjust this log message for Recycling Station (the only Choice that is not a ValueEffect w named key)
-        keys = list(self.choices.keys())
-        logging.warning("{} can choose {} or {}".format(
-            gamestate.active_player.name, keys[0].name, keys[1].name))
+        logging.warning("{} can choose: {}".format(gamestate.active_player.name, self.choices))
 
     def _resolve(self, choice):
-        logging.warning("{} is CHOOSING {}".format(self.gamestate.active_player.name, choice.name))
+        logging.warning("{} is CHOOSING {}".format(self.gamestate.active_player.name, choice.__name__))
         ChoiceEffect(self.choices[choice]).apply(self.gamestate)
 
 

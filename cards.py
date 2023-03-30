@@ -1,8 +1,6 @@
-import logging
-
 from effects import ValueEffect, DrawEffect, OpponentDiscardEffect, PendChoice, PendScrap, PendRecycle, \
-    GainFactionEffect, PendBrainWorld, PendingDestroyBaseEffect
-from enums import Abilities, Triggers, CardTypes, Factions, ValueTypes, Zones
+    GainFactionEffect, PendBrainWorld, PendingDestroyBaseEffect, GainTrade, GainAuthority, GainDamage
+from enums import Triggers, CardTypes, Factions, Zones
 
 
 DRAW_ONE = DrawEffect(1)
@@ -49,20 +47,19 @@ class Card(object):
         if new_owner_id:
             self.owner_id = new_owner_id
 
+    def has_ability(self, effect_class, triggers=None):
+        return any([type(ability) == effect_class
+                    for trigger, abilities in self.abilities.items()
+                    for ability in abilities if triggers is None or trigger in triggers])
+
     def trigger_ability(self, trigger):
         effects_data = self.available_abilities.pop(trigger)
         effects = []
-        for k, v in effects_data.items():
-            if isinstance(k, ValueTypes):
-                effects.append(ValueEffect(k, v))
-            # TODO: This sure has become unwieldy
-            elif k == Abilities.CHOICE:
-                choices = {ck: ValueEffect(ck, cv) if isinstance(ck, ValueTypes) else cv for ck, cv in v.items()}
-                effects.append(PendChoice(choices))
-            elif k in Abilities:
-                effects.append(v)
+        for effect in effects_data:
+            if isinstance(effect, tuple):
+                effects.append(ValueEffect(effect[0], effect[1]))
             else:
-                logging.warning("Ignoring ability - {}: {}".format(k, v))
+                effects.append(effect)
         return effects
 
     def is_base(self):
@@ -79,7 +76,7 @@ class Scout(Card):
     cost = 0
     abilities = {
         Triggers.SHIP: {
-            ValueTypes.TRADE: 1
+            GainTrade(1)
         }
     }
 
@@ -90,7 +87,7 @@ class Viper(Card):
     cost = 0
     abilities = {
         Triggers.SHIP: {
-            ValueTypes.DAMAGE: 1
+            GainDamage(1)
         }
     }
 
@@ -101,10 +98,10 @@ class Explorer(Card):
     cost = 2
     abilities = {
         Triggers.SHIP: {
-            ValueTypes.TRADE: 2
+            GainTrade(2)
         },
         Triggers.SCRAP: {
-            ValueTypes.DAMAGE: 2
+            GainDamage(2)
         }
     }
 
@@ -117,10 +114,10 @@ class BlobFighter(Card):
     cost = 1
     abilities = {
         Triggers.SHIP: {
-            ValueTypes.DAMAGE: 3
+            GainDamage(3)
         },
         Triggers.ALLY: {
-            Abilities.DRAW: DRAW_ONE
+            DRAW_ONE
         }
     }
 
@@ -132,10 +129,10 @@ class TradePod(Card):
     cost = 2
     abilities = {
         Triggers.SHIP: {
-            ValueTypes.TRADE: 3
+            GainTrade(3)
         },
         Triggers.ALLY: {
-            ValueTypes.DAMAGE: 2
+            GainDamage(2)
         }
     }
 
@@ -147,11 +144,11 @@ class BattlePod(Card):
     cost = 2
     abilities = {
         Triggers.SHIP: {
-            ValueTypes.DAMAGE: 4,
-            Abilities.SCRAP: SCRAP_FROM_TRADE_ROW
+            GainDamage(4),
+            SCRAP_FROM_TRADE_ROW
         },
         Triggers.ALLY: {
-            ValueTypes.DAMAGE: 2
+            GainDamage(2)
         }
     }
 
@@ -163,13 +160,13 @@ class Ram(Card):
     cost = 3
     abilities = {
         Triggers.SHIP: {
-            ValueTypes.DAMAGE: 5
+            GainDamage(5)
         },
         Triggers.ALLY: {
-            ValueTypes.DAMAGE: 2
+            GainDamage(2)
         },
         Triggers.SCRAP: {
-            ValueTypes.TRADE: 3
+            GainTrade(3)
         }
     }
 
@@ -181,12 +178,12 @@ class BlobDestroyer(Card):
     cost = 4
     abilities = {
         Triggers.SHIP: {
-            ValueTypes.DAMAGE: 6
+            GainDamage(6)
         },
         Triggers.ALLY: {
             # These need to trigger unorderly before having this actually destroy a base
-            Abilities.UNIMPLEMENTED: "Blow up a Base",
-            Abilities.SCRAP: SCRAP_FROM_TRADE_ROW
+            "Blow up a Base",
+            SCRAP_FROM_TRADE_ROW
         }
     }
 
@@ -198,10 +195,10 @@ class BlobCarrier(Card):
     cost = 6
     abilities = {
         Triggers.SHIP: {
-            ValueTypes.DAMAGE: 7
+            GainDamage(7)
         },
         Triggers.ALLY: {
-            Abilities.UNIMPLEMENTED: "Blob Carrier"
+            "Blob Carrier"
         }
     }
 
@@ -213,13 +210,13 @@ class BattleBlob(Card):
     cost = 6
     abilities = {
         Triggers.SHIP: {
-            ValueTypes.DAMAGE: 8
+            GainDamage(8)
         },
         Triggers.ALLY: {
-            Abilities.DRAW: DRAW_ONE
+            DRAW_ONE
         },
         Triggers.SCRAP: {
-            ValueTypes.DAMAGE: 4
+            GainDamage(4)
         }
     }
 
@@ -231,11 +228,11 @@ class Mothership(Card):
     cost = 6
     abilities = {
         Triggers.SHIP: {
-            ValueTypes.DAMAGE: 6,
-            Abilities.DRAW: DRAW_ONE
+            GainDamage(6),
+            DRAW_ONE
         },
         Triggers.ALLY: {
-            Abilities.DRAW: DRAW_ONE
+            DRAW_ONE
         }
     }
 
@@ -249,10 +246,10 @@ class BlobWheel(Card):
     defense = 5
     abilities = {
         Triggers.BASE: {
-            ValueTypes.DAMAGE: 1,
+            GainDamage(1),
         },
         Triggers.SCRAP: {
-            ValueTypes.TRADE: 3
+            GainTrade(3)
         }
     }
 
@@ -265,10 +262,10 @@ class TheHive(Card):
     defense = 5
     abilities = {
         Triggers.BASE: {
-            ValueTypes.DAMAGE: 3,
+            GainDamage(3),
         },
         Triggers.ALLY: {
-            Abilities.DRAW: DRAW_ONE
+            DRAW_ONE
         }
     }
 
@@ -281,7 +278,7 @@ class BlobWorld(Card):
     defense = 8
     abilities = {
         Triggers.BASE: {
-            Abilities.UNIMPLEMENTED: "Blob World Choice"
+            "Blob World Choice"
         }
     }
 
@@ -294,10 +291,10 @@ class FederationShuttle(Card):
     cost = 1
     abilities = {
         Triggers.SHIP: {
-            ValueTypes.TRADE: 2,
+            GainTrade(2),
         },
         Triggers.ALLY: {
-            ValueTypes.AUTHORITY: 4,
+            GainAuthority(4),
         }
     }
 
@@ -309,11 +306,11 @@ class Cutter(Card):
     cost = 2
     abilities = {
         Triggers.SHIP: {
-            ValueTypes.AUTHORITY: 4,
-            ValueTypes.TRADE: 2,
+            GainAuthority(4),
+            GainTrade(2),
         },
         Triggers.ALLY: {
-            ValueTypes.DAMAGE: 4,
+            GainDamage(4),
         }
     }
 
@@ -325,9 +322,9 @@ class EmbassyYacht(Card):
     cost = 3
     abilities = {
         Triggers.SHIP: {
-            ValueTypes.AUTHORITY: 3,
-            ValueTypes.TRADE: 2,
-            Abilities.UNIMPLEMENTED: "Embassy Draw"
+            GainAuthority(3),
+            GainTrade(2),
+            "Embassy Draw"
         }
     }
 
@@ -339,10 +336,10 @@ class Freighter(Card):
     cost = 4
     abilities = {
         Triggers.SHIP: {
-            ValueTypes.TRADE: 4,
+            GainTrade(4),
         },
         Triggers.ALLY: {
-            Abilities.UNIMPLEMENTED: "Shop To Top"
+            "Shop To Top"
         }
     }
 
@@ -354,11 +351,11 @@ class TradeEscort(Card):
     cost = 5
     abilities = {
         Triggers.SHIP: {
-            ValueTypes.AUTHORITY: 4,
-            ValueTypes.DAMAGE: 4,
+            GainAuthority(4),
+            GainDamage(4),
         },
         Triggers.ALLY: {
-            Abilities.DRAW: DRAW_ONE
+            DRAW_ONE
         }
     }
 
@@ -370,11 +367,11 @@ class Flagship(Card):
     cost = 6
     abilities = {
         Triggers.SHIP: {
-            ValueTypes.DAMAGE: 5,
-            Abilities.DRAW: DRAW_ONE
+            GainDamage(5),
+            DRAW_ONE
         },
         Triggers.ALLY: {
-            ValueTypes.AUTHORITY: 5,
+            GainAuthority(5),
         }
     }
 
@@ -386,12 +383,12 @@ class CommandShip(Card):
     cost = 8
     abilities = {
         Triggers.SHIP: {
-            ValueTypes.AUTHORITY: 4,
-            ValueTypes.DAMAGE: 5,
-            Abilities.DRAW: DrawEffect(2)
+            GainAuthority(4),
+            GainDamage(5),
+            DrawEffect(2)
         },
         Triggers.ALLY: {
-            Abilities.DESTROY_BASE: DESTROY_BASE
+            DESTROY_BASE
         }
     }
 
@@ -405,13 +402,13 @@ class TradingPost(Card):
     defense = 4
     abilities = {
         Triggers.BASE: {
-            Abilities.CHOICE: {
-                ValueTypes.AUTHORITY: 1,
-                ValueTypes.TRADE: 1
-            }
+            PendChoice({
+                GainAuthority(1),
+                GainTrade(1)
+            })
         },
         Triggers.SCRAP: {
-            ValueTypes.DAMAGE: 3
+            GainDamage(3)
         }
     }
 
@@ -424,13 +421,13 @@ class BarterWorld(Card):
     defense = 4
     abilities = {
         Triggers.BASE: {
-            Abilities.CHOICE: {
-                ValueTypes.AUTHORITY: 2,
-                ValueTypes.TRADE: 2
-            }
+            PendChoice({
+                GainAuthority(2),
+                GainTrade(2)
+            })
         },
         Triggers.SCRAP: {
-            ValueTypes.DAMAGE: 5
+            GainDamage(5)
         }
     }
 
@@ -443,13 +440,13 @@ class DefenseCenter(Card):
     defense = 5
     abilities = {
         Triggers.BASE: {
-            Abilities.CHOICE: {
-                ValueTypes.AUTHORITY: 3,
-                ValueTypes.DAMAGE: 2
-            }
+            PendChoice({
+                GainAuthority(3),
+                GainDamage(2)
+            })
         },
         Triggers.ALLY: {
-            ValueTypes.DAMAGE: 2
+            GainDamage(2)
         }
     }
 
@@ -462,11 +459,11 @@ class PortOfCall(Card):
     defense = 6
     abilities = {
         Triggers.BASE: {
-            ValueTypes.TRADE: 3
+            GainTrade(3)
         },
         Triggers.SCRAP: {
-            Abilities.DRAW: DRAW_ONE,
-            Abilities.DESTROY_BASE: DESTROY_BASE
+            DRAW_ONE,
+            DESTROY_BASE
         }
     }
 
@@ -479,11 +476,11 @@ class CentralOffice(Card):
     defense = 6
     abilities = {
         Triggers.BASE: {
-            ValueTypes.TRADE: 2,
-            Abilities.UNIMPLEMENTED: "Freighter"
+            GainTrade(2),
+            "Freighter"
         },
         Triggers.ALLY: {
-            Abilities.DRAW: DRAW_ONE
+            DRAW_ONE
         }
     }
 
@@ -496,11 +493,11 @@ class TradeBot(Card):
     cost = 1
     abilities = {
         Triggers.SHIP: {
-            ValueTypes.TRADE: 1,
-            Abilities.SCRAP: SCRAP_FROM_HAND_OR_DISCARD
+            GainTrade(1),
+            SCRAP_FROM_HAND_OR_DISCARD
         },
         Triggers.ALLY: {
-            ValueTypes.DAMAGE: 2,
+            GainDamage(2),
         }
     }
 
@@ -512,11 +509,11 @@ class MissileBot(Card):
     cost = 2
     abilities = {
         Triggers.SHIP: {
-            ValueTypes.DAMAGE: 2,
-            Abilities.SCRAP: SCRAP_FROM_HAND_OR_DISCARD
+            GainDamage(2),
+            SCRAP_FROM_HAND_OR_DISCARD
         },
         Triggers.ALLY: {
-            ValueTypes.DAMAGE: 2,
+            GainDamage(2),
         }
     }
 
@@ -528,11 +525,11 @@ class SupplyBot(Card):
     cost = 3
     abilities = {
         Triggers.SHIP: {
-            ValueTypes.TRADE: 2,
-            Abilities.SCRAP: SCRAP_FROM_HAND_OR_DISCARD
+            GainTrade(2),
+            SCRAP_FROM_HAND_OR_DISCARD
         },
         Triggers.ALLY: {
-            ValueTypes.DAMAGE: 2,
+            GainDamage(2),
         }
     }
 
@@ -544,13 +541,11 @@ class PatrolMech(Card):
     cost = 4
     abilities = {
         Triggers.SHIP: {
-            Abilities.CHOICE: {
-                ValueTypes.TRADE: 3,
-                ValueTypes.DAMAGE: 5
-            }
-        },
+            PendChoice([
+                GainTrade(3),
+                GainDamage(5)])},
         Triggers.ALLY: {
-            Abilities.SCRAP: SCRAP_FROM_HAND_OR_DISCARD
+            SCRAP_FROM_HAND_OR_DISCARD
         }
     }
 
@@ -562,7 +557,7 @@ class StealthNeedle(Card):
     cost = 4
     abilities = {
         Triggers.SHIP: {
-            Abilities.UNIMPLEMENTED: "Stealth Needle"
+            "Stealth Needle"
         }
     }
 
@@ -574,11 +569,11 @@ class BattleMech(Card):
     cost = 5
     abilities = {
         Triggers.SHIP: {
-            ValueTypes.DAMAGE: 4,
-            Abilities.SCRAP: SCRAP_FROM_HAND_OR_DISCARD
+            GainDamage(4),
+            SCRAP_FROM_HAND_OR_DISCARD
         },
         Triggers.ALLY: {
-            Abilities.DRAW: DRAW_ONE
+            DRAW_ONE
         }
     }
 
@@ -590,11 +585,11 @@ class MissileMech(Card):
     cost = 6
     abilities = {
         Triggers.SHIP: {
-            ValueTypes.DAMAGE: 6,
-            Abilities.DESTROY_BASE: DESTROY_BASE
+            GainDamage(6),
+            DESTROY_BASE
         },
         Triggers.ALLY: {
-            Abilities.DRAW: DRAW_ONE
+            DRAW_ONE
         }
     }
 
@@ -608,7 +603,7 @@ class BattleStation(Card):
     defense = 5
     abilities = {
         Triggers.SCRAP: {
-            ValueTypes.DAMAGE: 5,
+            GainDamage(5),
         }
     }
 
@@ -621,7 +616,7 @@ class MechWorld(Card):
     defense = 6
     abilities = {
         Triggers.BASE: {
-            Abilities.MECH_WORLD: GainFactionEffect(Factions.BLOB, Factions.STAR_EMPIRE, Factions.TRADE_FEDERATION)
+            GainFactionEffect(Factions.BLOB, Factions.STAR_EMPIRE, Factions.TRADE_FEDERATION)
         }
     }
 
@@ -634,7 +629,7 @@ class Junkyard(Card):
     defense = 5
     abilities = {
         Triggers.BASE: {
-            Abilities.SCRAP: SCRAP_FROM_HAND_OR_DISCARD
+            SCRAP_FROM_HAND_OR_DISCARD
         }
     }
 
@@ -647,8 +642,8 @@ class MachineBase(Card):
     defense = 6
     abilities = {
         Triggers.BASE: {
-            Abilities.DRAW: DRAW_ONE,
-            Abilities.SCRAP: PendScrap(Zones.HAND, mandatory=True)
+            DRAW_ONE,
+            PendScrap(Zones.HAND, mandatory=True)
         }
     }
 
@@ -661,7 +656,7 @@ class BrainWorld(Card):
     defense = 6
     abilities = {
         Triggers.BASE: {
-            Abilities.BRAIN_WORLD: PendBrainWorld()
+            PendBrainWorld()
         }
     }
 
@@ -674,11 +669,11 @@ class ImperialFighter(Card):
     cost = 1
     abilities = {
         Triggers.SHIP: {
-            ValueTypes.DAMAGE: 2,
-            Abilities.DISCARD: DISCARD
+            GainDamage(2),
+            DISCARD
         },
         Triggers.ALLY: {
-            ValueTypes.DAMAGE: 2,
+            GainDamage(2),
         }
     }
 
@@ -690,11 +685,11 @@ class Corvette(Card):
     cost = 2
     abilities = {
         Triggers.SHIP: {
-            ValueTypes.DAMAGE: 1,
-            Abilities.DRAW: DRAW_ONE
+            GainDamage(1),
+            DRAW_ONE
         },
         Triggers.ALLY: {
-            ValueTypes.DAMAGE: 2,
+            GainDamage(2),
         }
     }
 
@@ -706,11 +701,11 @@ class SurveyShip(Card):
     cost = 3
     abilities = {
         Triggers.SHIP: {
-            ValueTypes.TRADE: 1,
-            Abilities.DRAW: DRAW_ONE
+            GainTrade(1),
+            DRAW_ONE
         },
         Triggers.SCRAP: {
-            Abilities.DISCARD: DISCARD
+            DISCARD
         }
     }
 
@@ -722,14 +717,14 @@ class ImperialFrigate(Card):
     cost = 3
     abilities = {
         Triggers.SHIP: {
-            ValueTypes.DAMAGE: 4,
-            Abilities.DISCARD: DISCARD
+            GainDamage(4),
+            DISCARD
         },
         Triggers.ALLY: {
-            ValueTypes.DAMAGE: 2,
+            GainDamage(2),
         },
         Triggers.SCRAP: {
-            Abilities.DRAW: DRAW_ONE
+            DRAW_ONE
         }
 
     }
@@ -742,15 +737,15 @@ class Battlecruiser(Card):
     cost = 6
     abilities = {
         Triggers.SHIP: {
-            ValueTypes.DAMAGE: 6,
-            Abilities.DRAW: DRAW_ONE
+            GainDamage(6),
+            DRAW_ONE
         },
         Triggers.ALLY: {
-            Abilities.DISCARD: DISCARD
+            DISCARD
         },
         Triggers.SCRAP: {
-            Abilities.DRAW: DRAW_ONE,
-            Abilities.DESTROY_BASE: DESTROY_BASE
+            DRAW_ONE,
+            DESTROY_BASE
         }
     }
 
@@ -762,11 +757,11 @@ class Dreadnaught(Card):
     cost = 7
     abilities = {
         Triggers.SHIP: {
-            ValueTypes.DAMAGE: 7,
-            Abilities.DRAW: DRAW_ONE
+            GainDamage(7),
+            DRAW_ONE
         },
         Triggers.SCRAP: {
-            ValueTypes.DAMAGE: 5,
+            GainDamage(5)
         }
     }
 
@@ -780,10 +775,10 @@ class RecyclingStation(Card):
     defense = 4
     abilities = {
         Triggers.BASE: {
-            Abilities.CHOICE: {
-                ValueTypes.TRADE: 1,
-                Abilities.RECYCLE: PendRecycle()
-            }
+            PendChoice({
+                GainTrade(1),
+                PendRecycle()
+            })
         }
     }
 
@@ -796,13 +791,13 @@ class SpaceStation(Card):
     defense = 4
     abilities = {
         Triggers.BASE: {
-            ValueTypes.DAMAGE: 2
+            GainDamage(2)
         },
         Triggers.ALLY: {
-            ValueTypes.DAMAGE: 2
+            GainDamage(2)
         },
         Triggers.SCRAP: {
-            ValueTypes.TRADE: 4
+            GainTrade(4)
         }
     }
 
@@ -815,10 +810,10 @@ class WarWorld(Card):
     defense = 4
     abilities = {
         Triggers.BASE: {
-            ValueTypes.DAMAGE: 3
+            GainDamage(3)
         },
         Triggers.ALLY: {
-            ValueTypes.DAMAGE: 4
+            GainDamage(4)
         }
     }
 
@@ -831,10 +826,10 @@ class RoyalRedoubt(Card):
     defense = 6
     abilities = {
         Triggers.BASE: {
-            ValueTypes.DAMAGE: 3
+            GainDamage(3)
         },
         Triggers.ALLY: {
-            Abilities.DISCARD: DISCARD
+            DISCARD
         }
     }
 
@@ -847,6 +842,6 @@ class FleetHQ(Card):
     defense = 8
     abilities = {
         Triggers.BASE: {
-            Abilities.UNIMPLEMENTED: "Fleet HQ"
+            "Fleet HQ"
         }
     }

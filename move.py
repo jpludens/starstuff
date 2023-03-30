@@ -1,7 +1,6 @@
 import logging
-from functools import wraps
 
-from cards import Explorer, Card
+from cards import Explorer
 from effects import PendScrap, PendChoice, PendDiscard, DestroyBaseEffect, PendingDestroyBaseEffect
 from enums import Zones, CardTypes, Triggers, ValueTypes
 from util import move_list_item
@@ -10,6 +9,7 @@ from util import move_list_item
 class Move(object):
     def execute(self, gamestate):
         raise NotImplementedError
+
 
 class AbilityActivation(Move):
     def __init__(self, card, trigger):
@@ -29,6 +29,9 @@ class AbilityActivation(Move):
         for effect in self.card.trigger_ability(self.trigger):
             # These need to occur in this order so that effects will apply to this card
             gamestate.last_activated_card = self.card
+            if isinstance(effect, str):
+                logging.warning("Skipping this one for now: ")
+                continue
             effect.apply(gamestate)
 
 

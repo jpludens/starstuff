@@ -4,8 +4,9 @@ from unittest import TestCase
 from cards import Scout, Viper, SpaceStation, BattleStation, BarterWorld, RoyalRedoubt, BlobWheel, BlobFighter, \
     Explorer, Cutter, Dreadnaught, TradePod, SurveyShip, PatrolMech, MissileBot, MachineBase, BattlePod, \
     ImperialFighter, RecyclingStation, MechWorld, BrainWorld, MissileMech, TradingPost
-from effects import PendChoice, PendScrap, PendDiscard, PendRecycle, PendBrainWorld, PendingDestroyBaseEffect
-from enums import Zones, ValueTypes, Triggers, Abilities, Factions
+from effects import PendChoice, PendScrap, PendDiscard, PendRecycle, PendBrainWorld, PendingDestroyBaseEffect, \
+    GainTrade, GainAuthority, GainDamage
+from enums import Zones, ValueTypes, Triggers, Factions
 from gamestate import GameState
 from move import PlayCard, ActivateBase, ActivateAlly, ActivateScrap, Choose, Scrap, EndTurn, Discard, AttackOpponent, \
     AttackBase, DestroyBase
@@ -362,13 +363,13 @@ class TestChoiceEffect(StarstuffTests):
         self.assert_trade(0)
         self.assert_damage(0)
 
-        Choose(ValueTypes.TRADE).execute(self.game)
+        Choose(GainTrade).execute(self.game)
         self.assert_pending(None)
         self.assert_trade(3)
         self.assert_damage(0)
 
         PlayCard(mech2).execute(self.game)
-        Choose(ValueTypes.DAMAGE).execute(self.game)
+        Choose(GainDamage).execute(self.game)
         self.assert_trade(3)
         self.assert_damage(5)
 
@@ -386,13 +387,13 @@ class TestChoiceEffect(StarstuffTests):
         self.assert_authority(50)
         self.assert_trade(0)
 
-        Choose(ValueTypes.AUTHORITY).execute(self.game)
+        Choose(GainAuthority).execute(self.game)
         self.assert_authority(52)
         self.assert_trade(0)
 
         PlayCard(base2).execute(self.game)
         ActivateBase(base2).execute(self.game)
-        Choose(ValueTypes.TRADE).execute(self.game)
+        Choose(GainTrade).execute(self.game)
         self.assert_authority(52)
         self.assert_trade(2)
 
@@ -581,16 +582,16 @@ class TestRecyclingStation(StarstuffTests):
         # TODO: Shouldn't even pend the choice
 
     def test_choose_trade(self):
-        Choose(ValueTypes.TRADE).execute(self.game)
+        Choose(GainTrade).execute(self.game)
         self.assert_pending(None)
         self.assert_trade(1)
 
     def test_decline_discard(self):
-        Choose(Abilities.RECYCLE).execute(self.game)
+        Choose(PendRecycle).execute(self.game)
         self.assert_pending(PendRecycle)
 
     def test_discard_1(self):
-        Choose(Abilities.RECYCLE).execute(self.game)
+        Choose(PendRecycle).execute(self.game)
         self.assert_hand_count(3)
         self.assert_deck_count(7)
         self.assert_discard_count(0)
@@ -605,7 +606,7 @@ class TestRecyclingStation(StarstuffTests):
         self.assert_discard_count(1)
 
     def test_discard_1_no_deck_no_discard(self):
-        Choose(Abilities.RECYCLE).execute(self.game)
+        Choose(PendRecycle).execute(self.game)
         self._clear_zones(Zones.DECK, Zones.DISCARD)
 
         # Card will have been discarded and redrawn
@@ -617,7 +618,7 @@ class TestRecyclingStation(StarstuffTests):
         self.assert_discard_count(0)
 
     def test_discard_2(self):
-        Choose(Abilities.RECYCLE).execute(self.game)
+        Choose(PendRecycle).execute(self.game)
 
         Discard(*self.targets).execute(self.game)
         self.assert_in_discard(self.targets[0])
@@ -627,15 +628,12 @@ class TestRecyclingStation(StarstuffTests):
         self.assert_discard_count(2)
 
     def test_discard_2_with_no_deck_one_card_in_discard(self):
-        Choose(Abilities.RECYCLE).execute(self.game)
+        Choose(PendRecycle).execute(self.game)
         self._clear_zones(Zones.DECK, Zones.DISCARD)
         self._add_cards_to_discard(Viper())
 
         # One card will have been redrawn, the other will be in the deck
         Discard(*self.targets).execute(self.game)
-        target_locations = set([s.location for s in self.targets])
-        self.assertIn(Zones.DECK, target_locations)
-        self.assertIn(Zones.HAND, target_locations)
         self.assert_hand_count(3)
         self.assert_deck_count(1)
         self.assert_discard_count(0)

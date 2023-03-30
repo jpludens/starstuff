@@ -38,12 +38,4 @@ class Factions(Enum):
 
 
 class Abilities(Enum):
-    DRAW = "DRAW"
-    SCRAP = "SCRAP"
-    CHOICE = "CHOICE"
-    DISCARD = "DISCARD"
-    RECYCLE = "RECYCLE"
-    MECH_WORLD = "MECH_WORLD"
-    BRAIN_WORLD = "BRAIN_WORLD"
-    DESTROY_BASE = "DESTROY_BASE"
-    UNIMPLEMENTED = "UNIMPLEMENTED"
+    pass
