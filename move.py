@@ -7,18 +7,25 @@ from enums import Zones, CardTypes, Triggers, ValueTypes
 from util import move_list_item
 
 
-# TODO: Validation on all moves (pull the validate methods up from PendingMove to Move)
-class Move(object):
+class Move(ABC):
     def execute(self, gamestate):
+        self._validate(gamestate)
+        self._execute(gamestate)
+
+    def _execute(self, gamestate):
+        raise NotImplementedError
+
+    def _validate(self, gamestate):
         raise NotImplementedError
 
 
-class AbilityActivation(Move):
-    def __init__(self, card, trigger):
-        self.card = card
-        self.trigger = trigger
+class AbilityActivation(Move, ABC):
+    trigger = None
 
-    def execute(self, gamestate):
+    def __init__(self, card):
+        self.card = card
+
+    def _execute(self, gamestate):
         self.activate_ability(gamestate)
 
     def activate_ability(self, gamestate):
@@ -38,10 +45,12 @@ class AbilityActivation(Move):
 
 
 class PlayCard(AbilityActivation):
-    def __init__(self, card):
-        super().__init__(card, Triggers.SHIP)
+    trigger = Triggers.SHIP
 
-    def execute(self, gamestate):
+    def _validate(self, gamestate):
+        pass  # No validation - allowing KeyError if card is not in hand
+
+    def _execute(self, gamestate):
         logging.warning("{} is PLAYING: {}".format(gamestate.active_player.name, self.card.name))
         self.card.move_to(Zones.IN_PLAY)
         gamestate.active_player.active_factions.update(self.card.active_factions)
@@ -54,25 +63,27 @@ class PlayCard(AbilityActivation):
 
 
 class ActivateBase(AbilityActivation):
-    def __init__(self, card):
-        super().__init__(card, Triggers.BASE)
+    trigger = Triggers.BASE
+
+    def _validate(self, gamestate):
+        pass  # No validation - allowing KeyError if Triggers.BASE is unavailable or consumed
 
 
 class ActivateAlly(AbilityActivation):
-    def __init__(self, card):
-        super().__init__(card, Triggers.ALLY)
+    trigger = Triggers.ALLY
 
-    def execute(self, gamestate):
+    def _validate(self, gamestate):
         if gamestate.active_player.active_factions[self.card.faction] <= 1:
             raise FileNotFoundError
-        self.activate_ability(gamestate)
 
 
 class ActivateScrap(AbilityActivation):
-    def __init__(self, card):
-        super().__init__(card, Triggers.SCRAP)
+    trigger = Triggers.SCRAP
 
-    def execute(self, gamestate):
+    def _validate(self, gamestate):
+        pass  # No validation - allowing IndexErrors when card is removed from somewhere it isn't
+
+    def _execute(self, gamestate):
         # Both these steps must occur before "moving" card because that move function clears abilities
         self.activate_ability(gamestate)
         gamestate.active_player.active_factions.subtract(self.card.active_factions)
@@ -85,16 +96,16 @@ class BuyCard(Move):
     def __init__(self, card):
         self.card = card
 
-    def execute(self, gamestate):
+    def _validate(self, gamestate):
+        pass
+
+    def _execute(self, gamestate):
         logging.warning("{} is BUYING: {}".format(gamestate.active_player.name, self.card.name))
 
         gamestate.active_player[ValueTypes.TRADE] -= self.card.cost
-        if self.card == Explorer:
-            pass  # TODO (again)
-        else:
-            self.card.move_to(Zones.DISCARD, new_owner_id=gamestate.active_player.name)
-            move_list_item(self.card, gamestate.trade_row, gamestate.active_player[Zones.DISCARD])
-            gamestate.fill_trade_row()
+        self.card.move_to(Zones.DISCARD, new_owner_id=gamestate.active_player.name)
+        gamestate.remove_from_trade_row(self.card)
+        gamestate.active_player[Zones.DISCARD].append(self.card)
 
         logging.warning("{} spent {} TRADE and has {} remaining".format(
             gamestate.active_player.name,
@@ -102,15 +113,21 @@ class BuyCard(Move):
             gamestate.active_player[ValueTypes.TRADE]))
 
 
+class BuyExplorer(BuyCard):
+    def __init__(self):
+        super().__init__(Explorer())
+
+
 class AttackBase(Move):
     def __init__(self, base):
         self.base = base
 
-    def execute(self, gamestate):
+    def _validate(self, gamestate):
         if self.base.card_type != CardTypes.OUTPOST:
             if any([c.card_type == CardTypes.OUTPOST for c in gamestate.opponent[Zones.IN_PLAY]]):
                 raise FileNotFoundError
 
+    def _execute(self, gamestate):
         gamestate.active_player[ValueTypes.DAMAGE] -= self.base.defense
         DestroyBaseEffect(self.base).apply(gamestate)
 
@@ -123,11 +140,12 @@ class AttackOpponent(Move):
     def __init__(self, opponent):
         self.opponent = opponent
 
-    def execute(self, gamestate):
+    def _validate(self, gamestate):
         opponent_has_outpost = any([c.card_type == CardTypes.OUTPOST for c in gamestate.opponent[Zones.IN_PLAY]])
         if opponent_has_outpost:
             raise FileNotFoundError
 
+    def _execute(self, gamestate):
         logging.warning("{} is ATTACKING {} for {} damage!".format(
             gamestate.active_player.name,
             self.opponent.name,
@@ -144,7 +162,10 @@ class AttackOpponent(Move):
 
 
 class EndTurn(Move):
-    def execute(self, gamestate):
+    def _validate(self, gamestate):
+        pass
+
+    def _execute(self, gamestate):
         logging.warning("{} is ENDING THEIR TURN".format(gamestate.active_player.name))
         gamestate.next_turn()
         if gamestate.forced_discards:
@@ -159,16 +180,16 @@ class PendingMove(Move, ABC):
         super().__init__()
         self.effect = None
 
-    def _validate(self, gamestate):
-        raise NotImplementedError
-
-    def _resolve_effect(self):
-        raise NotImplementedError
-
     def execute(self, gamestate):
         self.effect = [e for e in gamestate.pending_effects if isinstance(e, self.resolved_effect_type)][0]
         self._validate(gamestate)
+        self._execute(gamestate)
+
+    def _execute(self, gamestate):
         self._resolve_effect()
+
+    def _resolve_effect(self):
+        raise NotImplementedError
 
 
 class Discard(PendingMove):

@@ -2,6 +2,7 @@ import logging
 from itertools import cycle
 from random import shuffle
 
+from cards import Explorer
 from enums import Zones
 from playerstate import PlayerState
 from decks import get_fresh_trade_deck
@@ -52,6 +53,14 @@ class GameState(object):
                     return self.trade_deck
                 elif isinstance(key, tuple):  # Ensure old (player, zone) key strategy isn't in use
                     raise RuntimeError
+
+    def remove_from_trade_row(self, card):
+        try:
+            self.trade_row.remove(card)
+        except ValueError:
+            if not isinstance(card, Explorer):
+                raise
+        self.fill_trade_row()
 
     def fill_trade_row(self):
         cards_in_row = len(self.trade_row)

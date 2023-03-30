@@ -9,7 +9,7 @@ from effects import PendChoice, PendScrap, PendDiscard, PendRecycle, PendBrainWo
 from enums import Zones, ValueTypes, Triggers, Factions
 from gamestate import GameState
 from move import PlayCard, ActivateBase, ActivateAlly, ActivateScrap, Choose, Scrap, EndTurn, Discard, AttackOpponent, \
-    AttackBase, DestroyBase
+    AttackBase, DestroyBase, BuyExplorer
 import logging
 
 logging.getLogger().setLevel(logging.ERROR)
@@ -307,6 +307,25 @@ class TestScrapAbilities(StarstuffTests):
         self.assert_opponent_discards(1)
         self.assert_scrapped(survey_ship)
         self.assert_no_active_factions()
+
+
+class TestExplorers(StarstuffTests):
+    def setUp(self):
+        super().setUp()
+        self.game.active_player[ValueTypes.TRADE] = 10
+
+    def test_buy_explorer(self):
+        self.assert_discard_count(0)
+        BuyExplorer().execute(self.game)
+        self.assert_discard_count(1)
+        self.assertIsInstance(self.game[Zones.DISCARD][0], Explorer)
+
+    def test_scrap_explorer(self):
+        explorer = Explorer()
+        self._add_cards_to_hand(explorer)
+        PlayCard(explorer).execute(self.game)
+        ActivateScrap(explorer).execute(self.game)
+        self.assert_scrapped(explorer)
 
 
 class TestDrawEffect(StarstuffTests):
