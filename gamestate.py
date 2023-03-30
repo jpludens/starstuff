@@ -2,7 +2,6 @@ import logging
 from itertools import cycle
 from random import shuffle
 
-from effects import PendDiscard
 from enums import Zones
 from playerstate import PlayerState
 from decks import get_fresh_trade_deck
@@ -31,9 +30,11 @@ class GameState(object):
         self.active_player = next(self._turn_order)
         self.opponent = player2
 
+        # TODO: These are pretty much only used by moves to control various things
+        # Is members of this class the best place for them to be?
         self.victor = None
         self.forced_discards = 0
-        self.pending_effect = None
+        self.pending_effects = []
         self.last_activated_card = None
 
     def __getitem__(self, key):
@@ -71,8 +72,4 @@ class GameState(object):
         self.turn_number += 1
         self.opponent = self.active_player
         self.active_player = next(self._turn_order)
-        if self.forced_discards:
-            self.pending_effect = PendDiscard(up_to=self.forced_discards, mandatory=True)
-            self.pending_effect.apply(self)
-            self.forced_discards = 0
         self.active_player.start_turn()  # Long live the King!

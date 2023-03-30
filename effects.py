@@ -100,12 +100,11 @@ class PendEffect(Effect, ABC):
 
     def apply(self, gamestate):
         self.gamestate = gamestate
-        gamestate.pending_effect = self
+        gamestate.pending_effects.append(self)
 
     def resolve(self, *args, **kwargs):
         self._resolve(*args, **kwargs)
-        if self.gamestate.pending_effect == self:  # This line almost on its own supports nesting effects
-            self.gamestate.pending_effect = None
+        self.gamestate.pending_effects.remove(self)
         self.gamestate = None
 
     def _resolve(self, *args, **kwargs):

@@ -1,4 +1,5 @@
 import logging
+from abc import ABC
 
 from cards import Explorer
 from effects import PendScrap, PendChoice, PendDiscard, DestroyBaseEffect, PendingDestroyBaseEffect
@@ -6,6 +7,7 @@ from enums import Zones, CardTypes, Triggers, ValueTypes
 from util import move_list_item
 
 
+# TODO: Validation on all moves (pull the validate methods up from PendingMove to Move)
 class Move(object):
     def execute(self, gamestate):
         raise NotImplementedError
@@ -141,59 +143,96 @@ class AttackOpponent(Move):
             gamestate.victor = gamestate.active_player.name
 
 
-class DestroyBase(Move):
-    def __init__(self, target=None):
-        self.target = target
-
-    def execute(self, gamestate):
-        assert isinstance(gamestate.pending_effect, PendingDestroyBaseEffect)
-        opponent_has_outpost = any([c.card_type == CardTypes.OUTPOST for c in gamestate.opponent[Zones.IN_PLAY]])
-        if opponent_has_outpost and self.target.card_type != CardTypes.OUTPOST:
-            raise FileNotFoundError
-        gamestate.pending_effect.resolve(self.target)
-
-
 class EndTurn(Move):
     def execute(self, gamestate):
         logging.warning("{} is ENDING THEIR TURN".format(gamestate.active_player.name))
         gamestate.next_turn()
+        if gamestate.forced_discards:
+            PendDiscard(up_to=gamestate.forced_discards, mandatory=True).apply(gamestate)
+            gamestate.forced_discards = 0
 
 
-class Discard(Move):
+class PendingMove(Move, ABC):
+    resolved_effect_type = None
+
+    def __init__(self):
+        super().__init__()
+        self.effect = None
+
+    def _validate(self, gamestate):
+        raise NotImplementedError
+
+    def _resolve_effect(self):
+        raise NotImplementedError
+
+    def execute(self, gamestate):
+        self.effect = [e for e in gamestate.pending_effects if isinstance(e, self.resolved_effect_type)][0]
+        self._validate(gamestate)
+        self._resolve_effect()
+
+
+class Discard(PendingMove):
+    resolved_effect_type = PendDiscard
+
     def __init__(self, *cards):
+        super().__init__()
         self.cards = cards
 
-    def execute(self, gamestate):
-        assert isinstance(gamestate.pending_effect, PendDiscard)
-        if gamestate.pending_effect.mandatory\
-                and len(self.cards) < gamestate.pending_effect.up_to\
+    def _validate(self, gamestate):
+        if self.effect.mandatory\
+                and len(self.cards) < self.effect.up_to\
                 and len(self.cards) < len(gamestate[Zones.HAND]):
             raise FileNotFoundError
-        gamestate.pending_effect.resolve(self.cards)
+
+    def _resolve_effect(self):
+        self.effect.resolve(self.cards)
 
 
-class Choose(Move):
+class Choose(PendingMove):
+    resolved_effect_type = PendChoice
+
     def __init__(self, choice):
+        super().__init__()
         self.choice = choice
 
-    def execute(self, gamestate):
-        assert isinstance(gamestate.pending_effect, PendChoice)
-        if self.choice not in gamestate.pending_effect.choices:
+    def _validate(self, gamestate):
+        if self.choice not in self.effect.choices:
             raise FileNotFoundError
-        gamestate.pending_effect.resolve(self.choice)
+
+    def _resolve_effect(self):
+        self.effect.resolve(self.choice)
 
 
-class Scrap(Move):
+class Scrap(PendingMove):
+    resolved_effect_type = PendScrap
+
     def __init__(self, *targets):
+        super().__init__()
         self.targets = targets
 
-    def execute(self, gamestate):
-        assert isinstance(gamestate.pending_effect, PendScrap)
+    def _validate(self, gamestate):
         for target in self.targets:
-            if target.location not in gamestate.pending_effect.zones:
+            if target.location not in self.effect.zones:
                 raise FileNotFoundError
-        if gamestate.pending_effect.mandatory:
-            if len(self.targets) < gamestate.pending_effect.up_to:
+        if self.effect.mandatory:
+            if len(self.targets) < self.effect.up_to:
                 raise FileNotFoundError
 
-        gamestate.pending_effect.resolve(self.targets)
+    def _resolve_effect(self):
+        self.effect.resolve(self.targets)
+
+
+class DestroyBase(PendingMove):
+    resolved_effect_type = PendingDestroyBaseEffect
+
+    def __init__(self, target=None):
+        super().__init__()
+        self.target = target
+
+    def _validate(self, gamestate):
+        opponent_has_outpost = any([c.card_type == CardTypes.OUTPOST for c in gamestate.opponent[Zones.IN_PLAY]])
+        if opponent_has_outpost and self.target.card_type != CardTypes.OUTPOST:
+            raise FileNotFoundError
+
+    def _resolve_effect(self):
+        self.effect.resolve(self.target)

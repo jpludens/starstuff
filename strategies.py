@@ -174,13 +174,13 @@ class FactionStrategy(Strategy):
         self.faction = faction
 
     def get_moves(self, gamestate):
-        # TODO: set a "prompt" on gamestate, e.g. Discard X, Neutral, Choose, Scrap
-        if isinstance(gamestate.pending_effect, PendDiscard):
-            if gamestate.pending_effect.mandatory:
-                if gamestate.pending_effect.up_to >= len(gamestate[Zones.HAND]):
+        first_pending_effect = gamestate.pending_effects[0] if gamestate.pending_effects else None
+        if isinstance(first_pending_effect, PendDiscard):
+            if first_pending_effect.mandatory:
+                if first_pending_effect.up_to >= len(gamestate[Zones.HAND]):
                     return [Discard(*gamestate[Zones.HAND])]
-                return [Discard(*sample(gamestate[Zones.HAND], gamestate.pending_effect.up_to))]
-            number_to_discard = randint(0, gamestate.pending_effect.up_to)
+                return [Discard(*sample(gamestate[Zones.HAND], first_pending_effect.up_to))]
+            number_to_discard = randint(0, first_pending_effect.up_to)
             if number_to_discard >= len(gamestate[Zones.HAND]):
                 return [Discard(*gamestate[Zones.HAND])]
             return [Discard(*sample(gamestate[Zones.HAND], number_to_discard))]
@@ -188,11 +188,11 @@ class FactionStrategy(Strategy):
         playerstate = gamestate.active_player
 
         # If we have to Scrap (because of Machine Base), do it
-        if isinstance(gamestate.pending_effect, PendScrap) and gamestate.pending_effect.mandatory:
+        if isinstance(first_pending_effect, PendScrap) and first_pending_effect.mandatory:
             if gamestate.active_player[Zones.HAND]:
                 return [Scrap(gamestate.active_player[Zones.HAND][0])]
 
-        if isinstance(gamestate.pending_effect, PendingDestroyBaseEffect):
+        if isinstance(first_pending_effect, PendingDestroyBaseEffect):
             return [DestroyBase(self._get_target_base(gamestate))]
 
         # If we have bases, activate them

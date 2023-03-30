@@ -106,9 +106,9 @@ class StarstuffTests(TestCase):
 
     def assert_pending(self, pending_type):
         if pending_type:
-            self.assertIsInstance(self.game.pending_effect, pending_type)
+            self.assertIn(pending_type, [type(e) for e in self.game.pending_effects])
         else:
-            self.assertIsNone(self.game.pending_effect)
+            self.assertListEqual(self.game.pending_effects, [])
 
 
 class TestShips(StarstuffTests):
