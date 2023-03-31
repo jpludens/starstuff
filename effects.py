@@ -145,6 +145,11 @@ class CopyShipEffect(Effect):
             gamestate.active_player.active_factions.update([self.ship.faction])
 
 
+class BlobWorldDrawEffect(Effect):
+    def apply(self, gamestate):
+        DrawEffect(gamestate.blob_cards_played_this_turn).apply(gamestate)
+
+
 # Pending Effects (requiring additional input from a player)
 class PendEffect(Effect, ABC):
     def __init__(self):

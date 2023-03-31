@@ -37,6 +37,7 @@ class GameState(object):
         self.forced_discards = 0
         self.pending_effects = []
         self.last_activated_card = None
+        self.blob_cards_played_this_turn = 0  # Hacky? Yes! Works? Yes!
 
     def __getitem__(self, key):
         try:
@@ -79,6 +80,7 @@ class GameState(object):
     def next_turn(self):
         self.active_player.end_turn()  # The King is dead.
         self.turn_number += 1
+        self.blob_cards_played_this_turn = 0
         self.opponent = self.active_player
         self.active_player = next(self._turn_order)
         self.active_player.start_turn()  # Long live the King!

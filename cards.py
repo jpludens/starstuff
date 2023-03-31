@@ -1,5 +1,6 @@
 from effects import ValueEffect, DrawEffect, OpponentDiscardEffect, PendChoice, PendScrap, PendRecycle, \
-    GainFactionEffect, PendBrainWorld, PendDestroyBase, GainTrade, GainAuthority, GainDamage, PendCopyShip
+    GainFactionEffect, PendBrainWorld, PendDestroyBase, GainTrade, GainAuthority, GainDamage, PendCopyShip, \
+    BlobWorldDrawEffect
 from enums import Triggers, CardTypes, Factions, Zones
 
 
@@ -277,7 +278,10 @@ class BlobWorld(Card):
     defense = 8
     abilities = {
         Triggers.BASE: {
-            "Blob World Choice"
+            PendChoice([
+                GainDamage(5),
+                BlobWorldDrawEffect()
+            ])
         }
     }
 

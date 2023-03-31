@@ -3,7 +3,7 @@ from abc import ABC
 
 from cards import Explorer
 from effects import PendScrap, PendChoice, PendDiscard, DestroyBaseEffect, PendDestroyBase, PendCopyShip
-from enums import Zones, CardTypes, Triggers, ValueTypes
+from enums import Zones, CardTypes, Triggers, ValueTypes, Factions
 from util import move_list_item
 
 
@@ -57,6 +57,9 @@ class PlayCard(AbilityActivation):
         move_list_item(self.card,
                        gamestate.active_player[Zones.HAND],
                        gamestate.active_player[Zones.IN_PLAY])
+
+        if self.card.faction == Factions.BLOB:
+            gamestate.blob_cards_played_this_turn += 1
 
         if self.card.card_type == CardTypes.SHIP:
             self.activate_ability(gamestate)

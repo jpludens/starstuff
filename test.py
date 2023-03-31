@@ -4,9 +4,9 @@ from unittest import TestCase
 from cards import Scout, Viper, SpaceStation, BattleStation, BarterWorld, RoyalRedoubt, BlobWheel, BlobFighter, \
     Explorer, Cutter, Dreadnaught, TradePod, SurveyShip, PatrolMech, MissileBot, MachineBase, BattlePod, \
     ImperialFighter, RecyclingStation, MechWorld, BrainWorld, MissileMech, TradingPost, BlobDestroyer, StealthNeedle, \
-    TradeBot
+    TradeBot, BlobWorld
 from effects import PendChoice, PendScrap, PendDiscard, PendRecycle, PendBrainWorld, PendDestroyBase, \
-    GainTrade, GainAuthority, GainDamage, PendCopyShip
+    GainTrade, GainAuthority, GainDamage, PendCopyShip, BlobWorldDrawEffect
 from enums import Zones, ValueTypes, Triggers, Factions
 from gamestate import GameState
 from move import PlayCard, ActivateBase, ActivateAlly, ActivateScrap, Choose, Scrap, EndTurn, Discard, AttackOpponent, \
@@ -981,3 +981,52 @@ class TestCopyShipEffectViaStealthNeedle(StarstuffTests):
         self.assert_scrapped(self.needle)
         self.assertCountEqual(self.game.active_player.active_factions,
                               Counter({Factions.STAR_EMPIRE: 1, Factions.MACHINE_CULT: 0}))
+
+
+class TestBlobWorld(StarstuffTests):
+    def setUp(self):
+        super().setUp()
+        self.blob_world = BlobWorld()
+        self._add_cards_to_hand(self.blob_world)
+        PlayCard(self.blob_world).execute(self.game)
+
+    def test_choose_combat(self):
+        ActivateBase(self.blob_world).execute(self.game)
+        self.assert_damage(0)
+        self.assert_pending(PendChoice)
+
+        Choose(GainDamage).execute(self.game)
+        self.assert_damage(5)
+        self.assert_pending()
+
+    def test_choose_draw(self):
+        ActivateBase(self.blob_world).execute(self.game)
+        self.assert_hand_count(3)
+        self.assert_pending(PendChoice)
+
+        Choose(BlobWorldDrawEffect).execute(self.game)
+        self.assert_hand_count(4)
+        self.assert_pending()
+
+    def test_choose_draw_with_two_other_blob_cards(self):
+        self._add_cards_to_hand(BlobWheel(), BlobFighter())
+        while self.game[Zones.HAND]:
+            PlayCard(self.game[Zones.HAND][0]).execute(self.game)
+        self.assert_hand_count(0)
+
+        ActivateBase(self.blob_world).execute(self.game)
+        Choose(BlobWorldDrawEffect).execute(self.game)
+        self.assert_hand_count(3)
+
+    def test_choose_draw_on_new_turn(self):
+        self.game[Zones.HAND].clear()
+        EndTurn().execute(self.game)
+        EndTurn().execute(self.game)
+
+        ActivateBase(self.blob_world).execute(self.game)
+        self.assert_hand_count(5)
+        self.assert_pending(PendChoice)
+
+        Choose(BlobWorldDrawEffect).execute(self.game)
+        self.assert_hand_count(5)
+        self.assert_pending()
