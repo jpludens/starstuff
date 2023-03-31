@@ -3,7 +3,7 @@ from unittest import TestCase
 from cards import Scout, Viper, SpaceStation, BattleStation, BarterWorld, RoyalRedoubt, BlobWheel, BlobFighter, \
     Explorer, Cutter, Dreadnaught, TradePod, SurveyShip, PatrolMech, MissileBot, MachineBase, BattlePod, \
     ImperialFighter, RecyclingStation, MechWorld, BrainWorld, MissileMech, TradingPost, BlobDestroyer, StealthNeedle, \
-    TradeBot, BlobWorld, BlobCarrier, Freighter, CentralOffice, EmbassyYacht
+    TradeBot, BlobWorld, BlobCarrier, Freighter, CentralOffice, EmbassyYacht, FleetHQ
 from effects import PendChoice, PendScrap, PendDiscard, PendRecycle, PendBrainWorld, PendDestroyBase, \
     GainTrade, GainAuthority, GainDamage, PendCopyShip, BlobWorldDrawEffect, PendAcquireShipToTopForFree
 from enums import Zones, ValueTypes, Triggers, Factions
@@ -1204,3 +1204,36 @@ class TestCarrierFreighterInteraction(StarstuffTests):
         AcquireCard(self.free_ships[1], top_of_deck=True).execute(self.game)
         self.assertEqual(self.game.freighter_hauls, 0)
         self.assert_on_top_of_deck(self.free_ships[1])
+
+
+class TestFleetHQ(StarstuffTests):
+    def setUp(self):
+        super().setUp()
+        self.fleet_hq = FleetHQ()
+
+    def test_fleet_hq(self):
+        self._clear_zones(Zones.HAND)
+        self._add_cards_to_hand(self.fleet_hq, Viper(), Scout(), TradingPost())
+        PlayCard(self.fleet_hq).execute(self.game)
+
+        for card in list(self.game[Zones.HAND]):
+            PlayCard(card).execute(self.game)
+        self.assert_damage(3)  # Viper 2, Scout 1, Trading Post 0
+
+    def test_fleet_hq_across_turns(self):
+        self._add_cards_to_hand(self.fleet_hq)
+        PlayCard(self.fleet_hq).execute(self.game)
+        EndTurn().execute(self.game)
+
+        self._clear_zones(Zones.HAND)
+        self._add_cards_to_hand(Scout(), Scout(), Scout())
+        for card in list(self.game[Zones.HAND]):
+            PlayCard(card)
+        self.assert_damage(0)
+        EndTurn().execute(self.game)
+
+        self._clear_zones(Zones.HAND)
+        self._add_cards_to_hand(Scout(), Scout(), Scout())
+        for card in list(self.game[Zones.HAND]):
+            PlayCard(card).execute(self.game)
+        self.assert_damage(3)

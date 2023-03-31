@@ -843,7 +843,6 @@ class FleetHQ(Card):
     cost = 8
     defense = 8
     abilities = {
-        Triggers.BASE: {
-            "Fleet HQ"
-        }
+            # TODO...? This is currently hardcoded into PlayCard,
+            # which honestly feels Just Fine unless there are other passive effects
     }

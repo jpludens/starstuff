@@ -1,9 +1,9 @@
 import logging
 from abc import ABC
 
-from cards import Explorer
+from cards import Explorer, FleetHQ
 from effects import PendScrap, PendChoice, PendDiscard, DestroyBaseEffect, PendDestroyBase, PendCopyShip, AcquireEffect, \
-    PendAcquireShipToTopForFree
+    PendAcquireShipToTopForFree, GainDamage
 from enums import Zones, CardTypes, Triggers, ValueTypes, Factions
 from util import move_list_item
 
@@ -63,6 +63,8 @@ class PlayCard(AbilityActivation):
             gamestate.blob_cards_played_this_turn += 1
 
         if self.card.card_type == CardTypes.SHIP:
+            if any([isinstance(card, FleetHQ) for card in gamestate[Zones.IN_PLAY]]):
+                GainDamage(1).apply(gamestate)
             self.activate_ability(gamestate)
 
 
