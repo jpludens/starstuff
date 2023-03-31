@@ -2,7 +2,7 @@ import logging
 from abc import ABC
 
 from cards import Explorer
-from effects import PendScrap, PendChoice, PendDiscard, DestroyBaseEffect, PendingDestroyBaseEffect
+from effects import PendScrap, PendChoice, PendDiscard, DestroyBaseEffect, PendDestroyBase, PendCopyShip
 from enums import Zones, CardTypes, Triggers, ValueTypes
 from util import move_list_item
 
@@ -74,6 +74,11 @@ class ActivateAlly(AbilityActivation):
 
     def _validate(self, gamestate):
         if gamestate.active_player.active_factions[self.card.faction] <= 1:
+            # This is pretty much just for stealth needle
+            if len(self.card.active_factions) > 1:
+                other_faction = [f for f in self.card.active_factions if f != self.card.faction][0]
+                if gamestate.active_player.active_factions[other_faction] > 1:
+                    return
             raise FileNotFoundError
 
 
@@ -244,7 +249,7 @@ class Scrap(PendingMove):
 
 
 class DestroyBase(PendingMove):
-    resolved_effect_type = PendingDestroyBaseEffect
+    resolved_effect_type = PendDestroyBase
 
     def __init__(self, target=None):
         super().__init__()
@@ -257,3 +262,18 @@ class DestroyBase(PendingMove):
 
     def _resolve_effect(self):
         self.effect.resolve(self.target)
+
+
+class CopyShip(PendingMove):
+    resolved_effect_type = PendCopyShip
+
+    def __init__(self, ship):
+        super().__init__()
+        self.ship = ship
+
+    def _validate(self, gamestate):
+        if self.ship not in gamestate[Zones.IN_PLAY]:
+            raise FileNotFoundError
+
+    def _resolve_effect(self):
+        self.effect.resolve(self.ship)

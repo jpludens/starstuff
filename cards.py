@@ -1,5 +1,5 @@
 from effects import ValueEffect, DrawEffect, OpponentDiscardEffect, PendChoice, PendScrap, PendRecycle, \
-    GainFactionEffect, PendBrainWorld, PendingDestroyBaseEffect, GainTrade, GainAuthority, GainDamage
+    GainFactionEffect, PendBrainWorld, PendDestroyBase, GainTrade, GainAuthority, GainDamage, PendCopyShip
 from enums import Triggers, CardTypes, Factions, Zones
 
 
@@ -7,7 +7,7 @@ DRAW_ONE = DrawEffect(1)
 SCRAP_FROM_TRADE_ROW = PendScrap(Zones.TRADE_ROW)
 SCRAP_FROM_HAND_OR_DISCARD = PendScrap(Zones.HAND, Zones.DISCARD)
 DISCARD = OpponentDiscardEffect()
-DESTROY_BASE = PendingDestroyBaseEffect()
+DESTROY_BASE = PendDestroyBase()
 
 
 class Card(object):
@@ -556,7 +556,7 @@ class StealthNeedle(Card):
     cost = 4
     abilities = {
         Triggers.SHIP: {
-            "Stealth Needle"
+            PendCopyShip()
         }
     }
 

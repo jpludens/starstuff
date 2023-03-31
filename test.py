@@ -3,13 +3,14 @@ from unittest import TestCase
 # Explorers TODO (lol)
 from cards import Scout, Viper, SpaceStation, BattleStation, BarterWorld, RoyalRedoubt, BlobWheel, BlobFighter, \
     Explorer, Cutter, Dreadnaught, TradePod, SurveyShip, PatrolMech, MissileBot, MachineBase, BattlePod, \
-    ImperialFighter, RecyclingStation, MechWorld, BrainWorld, MissileMech, TradingPost, BlobDestroyer
-from effects import PendChoice, PendScrap, PendDiscard, PendRecycle, PendBrainWorld, PendingDestroyBaseEffect, \
-    GainTrade, GainAuthority, GainDamage
+    ImperialFighter, RecyclingStation, MechWorld, BrainWorld, MissileMech, TradingPost, BlobDestroyer, StealthNeedle, \
+    TradeBot
+from effects import PendChoice, PendScrap, PendDiscard, PendRecycle, PendBrainWorld, PendDestroyBase, \
+    GainTrade, GainAuthority, GainDamage, PendCopyShip
 from enums import Zones, ValueTypes, Triggers, Factions
 from gamestate import GameState
 from move import PlayCard, ActivateBase, ActivateAlly, ActivateScrap, Choose, Scrap, EndTurn, Discard, AttackOpponent, \
-    AttackBase, DestroyBase, BuyExplorer
+    AttackBase, DestroyBase, BuyExplorer, CopyShip
 import logging
 
 logging.getLogger().setLevel(logging.ERROR)
@@ -771,7 +772,7 @@ class TestDestroyBaseEffect(StarstuffTests):
         self._add_bases_to_opponent(self.base)
         PlayCard(self.missile_mech).execute(self.game)
 
-        self.assert_pending(PendingDestroyBaseEffect)
+        self.assert_pending(PendDestroyBase)
 
         DestroyBase().execute(self.game)
         self.assert_pending()
@@ -781,7 +782,7 @@ class TestDestroyBaseEffect(StarstuffTests):
         self._add_bases_to_opponent(self.base)
         PlayCard(self.missile_mech).execute(self.game)
 
-        self.assert_pending(PendingDestroyBaseEffect)
+        self.assert_pending(PendDestroyBase)
 
         DestroyBase(self.base).execute(self.game)
         self.assert_pending()
@@ -791,7 +792,7 @@ class TestDestroyBaseEffect(StarstuffTests):
         self._add_bases_to_opponent(self.base, self.outpost)
         PlayCard(self.missile_mech).execute(self.game)
 
-        self.assert_pending(PendingDestroyBaseEffect)
+        self.assert_pending(PendDestroyBase)
         self.assertRaises(FileNotFoundError, DestroyBase(self.base).execute, self.game)
 
     def test_destroy_outpost_with_base(self):
@@ -823,10 +824,10 @@ class TestMultiplePendingEffectsViaBlobDestroyer(StarstuffTests):
         self.assert_pending()
 
         ActivateAlly(self.blob_destroyer).execute(self.game)
-        self.assert_pending(PendingDestroyBaseEffect, PendScrap)
+        self.assert_pending(PendDestroyBase, PendScrap)
 
         Scrap().execute(self.game)
-        self.assert_pending(PendingDestroyBaseEffect)
+        self.assert_pending(PendDestroyBase)
 
         DestroyBase().execute(self.game)
         self.assert_pending()
@@ -848,7 +849,7 @@ class TestMultiplePendingEffectsViaBlobDestroyer(StarstuffTests):
         self.assert_pending()
 
         ActivateAlly(self.blob_destroyer).execute(self.game)
-        self.assert_pending(PendingDestroyBaseEffect)
+        self.assert_pending(PendDestroyBase)
 
         DestroyBase().execute(self.game)
         self.assert_pending()
@@ -867,11 +868,11 @@ class TestMultiplePendingEffectsViaBlobDestroyer(StarstuffTests):
         self.assert_pending()
 
         ActivateAlly(self.blob_destroyer).execute(self.game)
-        self.assert_pending(PendingDestroyBaseEffect, PendScrap)
+        self.assert_pending(PendDestroyBase, PendScrap)
 
         initial_trade_deck_count = len(self.game[Zones.TRADE_DECK])
         Scrap(self.scrap_target).execute(self.game)
-        self.assert_pending(PendingDestroyBaseEffect)
+        self.assert_pending(PendDestroyBase)
         self.assert_scrapped(self.scrap_target)
         self.assertEqual(len(self.game[Zones.TRADE_DECK]), initial_trade_deck_count - 1)
 
@@ -886,7 +887,7 @@ class TestMultiplePendingEffectsViaBlobDestroyer(StarstuffTests):
         self.assert_pending()
 
         ActivateAlly(self.blob_destroyer).execute(self.game)
-        self.assert_pending(PendingDestroyBaseEffect, PendScrap)
+        self.assert_pending(PendDestroyBase, PendScrap)
 
         DestroyBase(self.base).execute(self.game)
         self.assert_pending(PendScrap)
@@ -898,3 +899,85 @@ class TestMultiplePendingEffectsViaBlobDestroyer(StarstuffTests):
         self.assert_pending()
         self.assert_scrapped(self.scrap_target)
         self.assertEqual(len(self.game[Zones.TRADE_DECK]), initial_trade_deck_count - 1)
+
+
+class TestCopyShipEffectViaStealthNeedle(StarstuffTests):
+    def setUp(self):
+        super().setUp()
+        self.needle = StealthNeedle()
+        self._add_cards_to_hand(self.needle)
+
+    def test_no_targets(self):
+        PlayCard(self.needle)
+        self.assert_pending()
+        self.assertEqual(len(self.needle.available_abilities), 0)
+
+    def test_decline(self):
+        pass  # TODO (shouldn't be possible)
+
+    def test_copy_scout(self):
+        scout = Scout()
+        self._add_cards_to_hand(scout)
+        PlayCard(scout).execute(self.game)
+        self.assert_trade(1)
+
+        PlayCard(self.needle).execute(self.game)
+        self.assert_pending(PendCopyShip)
+
+        CopyShip(scout).execute(self.game)
+        self.assert_trade(2)
+
+    def test_copy_ally(self):
+        blob_fighter = BlobFighter()
+        self._add_cards_to_hand(blob_fighter)
+        PlayCard(blob_fighter).execute(self.game)
+        self.assert_damage(3)
+
+        PlayCard(self.needle).execute(self.game)
+        self.assert_pending(PendCopyShip)
+
+        CopyShip(blob_fighter).execute(self.game)
+        self.assert_damage(6)
+
+        self.assert_hand_count(3)
+        self.assert_deck_count(7)
+        ActivateAlly(blob_fighter).execute(self.game)
+        ActivateAlly(self.needle).execute(self.game)
+        self.assert_hand_count(5)
+        self.assert_deck_count(5)
+
+    def test_machine_cult_ally(self):
+        scout = Scout()
+        trade_bot = TradeBot()
+        self._add_cards_to_hand(scout, trade_bot)
+        PlayCard(scout).execute(self.game)
+        PlayCard(trade_bot).execute(self.game)
+        Scrap().execute(self.game)
+        self.assert_trade(2)
+        self.assert_damage(0)
+
+        PlayCard(self.needle).execute(self.game)
+        CopyShip(trade_bot).execute(self.game)
+        Scrap().execute(self.game)
+        self.assert_trade(3)
+        self.assertCountEqual(self.game.active_player.active_factions, Counter({Factions.MACHINE_CULT: 2}))
+
+        ActivateAlly(trade_bot).execute(self.game)
+        ActivateAlly(self.needle).execute(self.game)
+        self.assert_damage(4)
+
+    def test_copy_and_scrap(self):
+        dreadnaught = Dreadnaught()
+        self._add_cards_to_hand(dreadnaught)
+        PlayCard(dreadnaught).execute(self.game)
+        self.assert_damage(7)
+
+        PlayCard(self.needle).execute(self.game)
+        CopyShip(dreadnaught).execute(self.game)
+        self.assert_damage(14)
+
+        ActivateScrap(self.needle).execute(self.game)
+        self.assert_damage(19)
+        self.assert_scrapped(self.needle)
+        self.assertCountEqual(self.game.active_player.active_factions,
+                              Counter({Factions.STAR_EMPIRE: 1, Factions.MACHINE_CULT: 0}))

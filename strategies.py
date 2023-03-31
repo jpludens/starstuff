@@ -1,6 +1,6 @@
 from random import choice, sample, randint
 from cards import Explorer, Viper, Scout, MachineBase
-from effects import PendDiscard, PendScrap, PendingDestroyBaseEffect, PendChoice, PendRecycle, GainDamage
+from effects import PendDiscard, PendScrap, PendDestroyBase, PendChoice, PendRecycle, GainDamage
 from enums import Triggers, CardTypes, ValueTypes, Zones, Factions
 from move import PlayCard, ActivateBase, ActivateAlly, ActivateScrap, BuyCard, EndTurn, Choose, Scrap, \
     Discard, AttackBase, AttackOpponent, DestroyBase
@@ -192,7 +192,7 @@ class FactionStrategy(Strategy):
             if gamestate.active_player[Zones.HAND]:
                 return [Scrap(gamestate.active_player[Zones.HAND][0])]
 
-        if isinstance(first_pending_effect, PendingDestroyBaseEffect):
+        if isinstance(first_pending_effect, PendDestroyBase):
             return [DestroyBase(self._get_target_base(gamestate))]
 
         # If we have bases, activate them

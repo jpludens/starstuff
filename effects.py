@@ -1,7 +1,7 @@
 import logging
 from abc import ABC
 
-from enums import Zones, ValueTypes
+from enums import Zones, ValueTypes, Triggers, CardTypes, Factions
 from util import move_list_item
 
 
@@ -58,6 +58,21 @@ class DrawEffect(Effect):
                 logging.warning("{} DRAWS a card".format(player.name))
 
 
+class DiscardEffect(Effect):
+    def __init__(self, cards):
+        self.cards = cards
+
+    def apply(self, gamestate):
+        if self.cards:
+            for card in self.cards:
+                logging.warning("{} DISCARDS {}".format(
+                    gamestate.active_player.name, [card.name for card in self.cards]))
+                card.move_to(Zones.DISCARD)
+                move_list_item(card, gamestate[Zones.HAND], gamestate[Zones.DISCARD])
+        else:
+            logging.warning("{} DOESN'T DISCARD".format(gamestate.active_player.name))
+
+
 class OpponentDiscardEffect(Effect):
     def apply(self, gamestate):
         if gamestate.forced_discards:
@@ -93,56 +108,6 @@ class DestroyBaseEffect(Effect):
             logging.warning("{} does not destroy a base".format(gamestate.active_player.name))
 
 
-# Pending Effects (requiring additional input from a player)
-class PendEffect(Effect, ABC):
-    def __init__(self):
-        self.gamestate = None
-
-    def apply(self, gamestate):
-        self.gamestate = gamestate
-        gamestate.pending_effects.append(self)
-
-    def resolve(self, *args, **kwargs):
-        self._resolve(*args, **kwargs)
-        self.gamestate.pending_effects.remove(self)
-        self.gamestate = None
-
-    def _resolve(self, *args, **kwargs):
-        raise NotImplementedError
-
-
-class PendingDestroyBaseEffect(PendEffect):
-    def apply(self, gamestate):
-        if any(gamestate.opponent[Zones.IN_PLAY]):
-            logging.warning("{} can DESTROY a Base".format(gamestate.active_player.name))
-            super().apply(gamestate)
-
-    def _resolve(self, base):
-        DestroyBaseEffect(base).apply(self.gamestate)
-
-
-class ChoiceEffect(Effect):
-    def __init__(self, choice):
-        self.choice = choice
-
-    def apply(self, gamestate):
-        self.choice.apply(gamestate)
-
-
-class PendChoice(PendEffect):
-    def __init__(self, choices):
-        super().__init__()
-        self.choices = {type(c): c for c in choices}
-
-    def apply(self, gamestate):
-        super().apply(gamestate)
-        logging.warning("{} can choose: {}".format(gamestate.active_player.name, self.choices))
-
-    def _resolve(self, choice):
-        logging.warning("{} is CHOOSING {}".format(self.gamestate.active_player.name, choice.__name__))
-        ChoiceEffect(self.choices[choice]).apply(self.gamestate)
-
-
 class ScrapEffect(Effect):
     def __init__(self, cards):
         self.cards = cards
@@ -163,6 +128,63 @@ class ScrapEffect(Effect):
 
         else:
             logging.warning("{} doesn't scrap anything".format(gamestate.active_player.name))
+
+
+class CopyShipEffect(Effect):
+    def __init__(self, ship):
+        self.ship = ship
+
+    def apply(self, gamestate):
+        logging.warning("{} COPIES {}".format(gamestate.active_player.name, self.ship.name))
+        needle = gamestate.last_activated_card
+        needle.available_abilities.update(self.ship.abilities)
+        for effect in needle.trigger_ability(Triggers.SHIP):
+            effect.apply(gamestate)
+        if self.ship.faction != Factions.MACHINE_CULT:
+            needle.active_factions.update([self.ship.faction])
+            gamestate.active_player.active_factions.update([self.ship.faction])
+
+
+# Pending Effects (requiring additional input from a player)
+class PendEffect(Effect, ABC):
+    def __init__(self):
+        self.gamestate = None
+
+    def apply(self, gamestate):
+        self.gamestate = gamestate
+        gamestate.pending_effects.append(self)
+
+    def resolve(self, *args, **kwargs):
+        self._resolve(*args, **kwargs)
+        self.gamestate.pending_effects.remove(self)
+        self.gamestate = None
+
+    def _resolve(self, *args, **kwargs):
+        raise NotImplementedError
+
+
+class PendDestroyBase(PendEffect):
+    def apply(self, gamestate):
+        if any(gamestate.opponent[Zones.IN_PLAY]):
+            logging.warning("{} can DESTROY a Base".format(gamestate.active_player.name))
+            super().apply(gamestate)
+
+    def _resolve(self, base):
+        DestroyBaseEffect(base).apply(self.gamestate)
+
+
+class PendChoice(PendEffect):
+    def __init__(self, choices):
+        super().__init__()
+        self.choices = {type(c): c for c in choices}
+
+    def apply(self, gamestate):
+        super().apply(gamestate)
+        logging.warning("{} can choose: {}".format(gamestate.active_player.name, self.choices))
+
+    def _resolve(self, choice):
+        logging.warning("{} is CHOOSING {}".format(self.gamestate.active_player.name, choice.__name__))
+        self.choices[choice].apply(self.gamestate)
 
 
 class PendScrap(PendEffect):
@@ -195,21 +217,6 @@ class PendBrainWorld(PendScrap):
         DrawEffect(len(scraps)).apply(self.gamestate)
 
 
-class DiscardEffect(Effect):
-    def __init__(self, cards):
-        self.cards = cards
-
-    def apply(self, gamestate):
-        if self.cards:
-            for card in self.cards:
-                logging.warning("{} DISCARDS {}".format(
-                    gamestate.active_player.name, [card.name for card in self.cards]))
-                card.move_to(Zones.DISCARD)
-                move_list_item(card, gamestate[Zones.HAND], gamestate[Zones.DISCARD])
-        else:
-            logging.warning("{} DOESN'T DISCARD".format(gamestate.active_player.name))
-
-
 class PendDiscard(PendEffect):
     def __init__(self, up_to=1, mandatory=False):
         super().__init__()
@@ -234,3 +241,13 @@ class PendRecycle(PendDiscard):
     def _resolve(self, discards):
         DiscardEffect(discards).apply(self.gamestate)
         DrawEffect(len(discards)).apply(self.gamestate)
+
+
+class PendCopyShip(PendEffect):
+    def apply(self, gamestate):
+        if len([c for c in gamestate[Zones.IN_PLAY] if c.card_type == CardTypes.SHIP]) > 1:
+            super().apply(gamestate)
+        logging.warning("{} can COPY A SHIP".format(gamestate.active_player.name))
+
+    def _resolve(self, ship):
+        CopyShipEffect(ship).apply(self.gamestate)
