@@ -504,15 +504,34 @@ class TestMachineBase(StarstuffTests):
         ActivateBase(self.base).execute(self.game)
         self.assertRaises(FileNotFoundError, Scrap(self.game[Zones.DISCARD][0]).execute, self.game)
 
-    # TODO: Make a special machine base effect that draws, then pends a scrap
     def test_activate_with_no_hand_no_deck_full_discard(self):
-        pass
+        self.game[Zones.HAND].clear()
+        self.game[Zones.DECK].clear()
+        self._add_cards_to_discard(Viper(), Scout(), Scout())
+
+        ActivateBase(self.base).execute(self.game)
+        self.assert_hand_count(1)
+        self.assert_deck_count(2)
+        self.assert_discard_count(0)
+        self.assert_pending(PendScrap)
 
     def test_activate_with_full_hand_no_deck_no_discard(self):
-        pass
+        self.game[Zones.DECK].clear()
+        self.game[Zones.DISCARD].clear()
+
+        ActivateBase(self.base).execute(self.game)
+        self.assert_hand_count(3)
+        self.assert_deck_count(0)
+        self.assert_discard_count(0)
+        self.assert_pending(PendScrap)
 
     def test_activate_with_no_hand_no_deck_no_discard(self):
-        pass
+        self.game[Zones.HAND].clear()
+        self.game[Zones.DECK].clear()
+        self.game[Zones.DISCARD].clear()
+
+        ActivateBase(self.base).execute(self.game)
+        self.assert_pending()
 
 
 class TestBlobScrapEffect(StarstuffTests):

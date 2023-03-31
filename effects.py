@@ -165,6 +165,12 @@ class CopyShipEffect(Effect):
             gamestate.active_player.active_factions.update([self.ship.faction])
 
 
+class MachineBaseEffect(Effect):
+    def apply(self, gamestate):
+        DrawEffect(1).apply(gamestate)
+        PendScrap(Zones.HAND, mandatory=True).apply(gamestate)
+
+
 class BlobWorldDrawEffect(Effect):
     def apply(self, gamestate):
         DrawEffect(gamestate.blob_cards_played_this_turn).apply(gamestate)

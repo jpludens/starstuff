@@ -1,6 +1,6 @@
 from effects import ValueEffect, DrawEffect, OpponentDiscardEffect, PendChoice, PendScrap, PendRecycle, \
     GainFactionEffect, PendBrainWorld, PendDestroyBase, GainTrade, GainAuthority, GainDamage, PendCopyShip, \
-    BlobWorldDrawEffect, PendAcquireShipToTopForFree, ShopToTopEffect
+    BlobWorldDrawEffect, PendAcquireShipToTopForFree, ShopToTopEffect, MachineBaseEffect
 from enums import Triggers, CardTypes, Factions, Zones
 
 
@@ -645,8 +645,7 @@ class MachineBase(Card):
     defense = 6
     abilities = {
         Triggers.BASE: {
-            DRAW_ONE,
-            PendScrap(Zones.HAND, mandatory=True)
+            MachineBaseEffect()
         }
     }
 
