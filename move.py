@@ -2,7 +2,8 @@ import logging
 from abc import ABC
 
 from cards import Explorer
-from effects import PendScrap, PendChoice, PendDiscard, DestroyBaseEffect, PendDestroyBase, PendCopyShip
+from effects import PendScrap, PendChoice, PendDiscard, DestroyBaseEffect, PendDestroyBase, PendCopyShip, AcquireEffect, \
+    PendAcquireShipToTopForFree
 from enums import Zones, CardTypes, Triggers, ValueTypes, Factions
 from util import move_list_item
 
@@ -100,30 +101,38 @@ class ActivateScrap(AbilityActivation):
         gamestate.active_player[Zones.IN_PLAY].remove(self.card)
 
 
-class BuyCard(Move):
-    def __init__(self, card):
-        self.card = card
+class AcquireCard(Move):
+    def __init__(self, card=None, explorer=True, top_of_deck=False):
+        self.top_of_deck = top_of_deck
+
+        if card:
+            self.card = card
+        elif explorer:
+            self.card = Explorer()
+        else:
+            raise ValueError
 
     def _validate(self, gamestate):
-        pass
+        if self.top_of_deck:
+            if self.card.card_type != CardTypes.SHIP or gamestate.freighter_hauls < 1:
+                raise FileNotFoundError
+        if gamestate[ValueTypes.TRADE] < self.card.cost:
+            raise FileNotFoundError
 
     def _execute(self, gamestate):
-        logging.warning("{} is BUYING: {}".format(gamestate.active_player.name, self.card.name))
-
-        gamestate.active_player[ValueTypes.TRADE] -= self.card.cost
-        self.card.move_to(Zones.DISCARD, new_owner_id=gamestate.active_player.name)
-        gamestate.remove_from_trade_row(self.card)
-        gamestate.active_player[Zones.DISCARD].append(self.card)
-
-        logging.warning("{} spent {} TRADE and has {} remaining".format(
-            gamestate.active_player.name,
-            self.card.cost,
-            gamestate.active_player[ValueTypes.TRADE]))
-
-
-class BuyExplorer(BuyCard):
-    def __init__(self):
-        super().__init__(Explorer())
+        if gamestate.pending_effects:
+            pending_effect = gamestate.pending_effects[0]
+            if isinstance(pending_effect, PendAcquireShipToTopForFree):
+                pending_effect.resolve(self.card)
+        else:
+            gamestate.active_player[ValueTypes.TRADE] -= self.card.cost
+            if gamestate.freighter_hauls and self.card.card_type == CardTypes.SHIP:
+                gamestate.freighter_hauls -= 1
+            AcquireEffect(self.card, self.top_of_deck).apply(gamestate)
+            logging.warning("{} spent {} TRADE and has {} remaining".format(
+                gamestate.active_player.name,
+                self.card.cost,
+                gamestate.active_player[ValueTypes.TRADE]))
 
 
 class AttackBase(Move):
@@ -276,6 +285,26 @@ class CopyShip(PendingMove):
 
     def _validate(self, gamestate):
         if self.ship not in gamestate[Zones.IN_PLAY]:
+            raise FileNotFoundError
+
+    def _resolve_effect(self):
+        self.effect.resolve(self.ship)
+
+
+class AcquireShipToTopForFree(PendingMove):
+    resolved_effect_type = PendAcquireShipToTopForFree
+
+    def __init__(self, ship=None, explorer=True):
+        super().__init__()
+        if ship:
+            self.ship = ship
+        elif explorer:
+            self.ship = Explorer()
+        else:
+            raise ValueError
+
+    def _validate(self, gamestate):
+        if self.ship not in gamestate[Zones.TRADE_ROW] and not isinstance(self.ship, Explorer):
             raise FileNotFoundError
 
     def _resolve_effect(self):

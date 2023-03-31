@@ -1,6 +1,6 @@
 from effects import ValueEffect, DrawEffect, OpponentDiscardEffect, PendChoice, PendScrap, PendRecycle, \
     GainFactionEffect, PendBrainWorld, PendDestroyBase, GainTrade, GainAuthority, GainDamage, PendCopyShip, \
-    BlobWorldDrawEffect
+    BlobWorldDrawEffect, PendAcquireShipToTopForFree, ShopToTopEffect
 from enums import Triggers, CardTypes, Factions, Zones
 
 
@@ -198,7 +198,7 @@ class BlobCarrier(Card):
             GainDamage(7)
         },
         Triggers.ALLY: {
-            "Blob Carrier"
+            PendAcquireShipToTopForFree()
         }
     }
 
@@ -342,7 +342,7 @@ class Freighter(Card):
             GainTrade(4),
         },
         Triggers.ALLY: {
-            "Shop To Top"
+            ShopToTopEffect()
         }
     }
 
@@ -480,7 +480,7 @@ class CentralOffice(Card):
     abilities = {
         Triggers.BASE: {
             GainTrade(2),
-            "Freighter"
+            ShopToTopEffect()
         },
         Triggers.ALLY: {
             DRAW_ONE

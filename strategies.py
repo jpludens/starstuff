@@ -2,7 +2,7 @@ from random import choice, sample, randint
 from cards import Explorer, Viper, Scout, MachineBase
 from effects import PendDiscard, PendScrap, PendDestroyBase, PendChoice, PendRecycle, GainDamage
 from enums import Triggers, CardTypes, ValueTypes, Zones, Factions
-from move import PlayCard, ActivateBase, ActivateAlly, ActivateScrap, BuyCard, EndTurn, Choose, Scrap, \
+from move import PlayCard, ActivateBase, ActivateAlly, ActivateScrap, AcquireCard, EndTurn, Choose, Scrap, \
     Discard, AttackBase, AttackOpponent, DestroyBase
 
 
@@ -94,7 +94,7 @@ class Strategy(object):
             if faction is not None and faction != card.faction:
                 continue
             if gamestate.active_player[ValueTypes.TRADE] >= card.cost:
-                return [BuyCard(card)]
+                return [AcquireCard(card)]
 
     @classmethod
     def _get_attack_all_outposts_moves(cls, gamestate):
@@ -296,7 +296,7 @@ class ExplorerStrategy(Strategy):
         if self.maximum_explorers and owned_explorers < self.maximum_explorers:
             number_to_buy = playerstate[ValueTypes.TRADE] // Explorer.cost
             if number_to_buy:
-                return [BuyCard(Explorer)] * number_to_buy
+                return [AcquireCard(Explorer)] * number_to_buy
 
         # If we aren't buying, scrap?
         if owned_explorers:

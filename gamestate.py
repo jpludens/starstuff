@@ -31,13 +31,14 @@ class GameState(object):
         self.active_player = next(self._turn_order)
         self.opponent = player2
 
-        # TODO: These are pretty much only used by moves to control various things
-        # Is members of this class the best place for them to be?
         self.victor = None
-        self.forced_discards = 0
         self.pending_effects = []
+
+        # Hacky? Yes! Works? Yes!
+        self.forced_discards = 0
         self.last_activated_card = None
-        self.blob_cards_played_this_turn = 0  # Hacky? Yes! Works? Yes!
+        self.blob_cards_played_this_turn = 0
+        self.freighter_hauls = 0
 
     def __getitem__(self, key):
         try:

@@ -58,6 +58,26 @@ class DrawEffect(Effect):
                 logging.warning("{} DRAWS a card".format(player.name))
 
 
+class AcquireEffect(Effect):
+    def __init__(self, card, top_of_deck=False):
+        self.card = card
+        self.top_of_deck = top_of_deck
+
+    def apply(self, gamestate):
+        if self.top_of_deck:
+            zone = Zones.DECK
+            suffix = " to top of deck"
+        else:
+            zone = Zones.DISCARD
+            suffix = ""
+
+        logging.warning("{} ACQUIRES {}{}".format(gamestate.active_player.name, self.card.name, suffix))
+
+        gamestate.remove_from_trade_row(self.card)
+        self.card.move_to(zone, new_owner_id=gamestate.active_player.name)
+        gamestate.active_player[zone].append(self.card)
+
+
 class DiscardEffect(Effect):
     def __init__(self, cards):
         self.cards = cards
@@ -148,6 +168,11 @@ class CopyShipEffect(Effect):
 class BlobWorldDrawEffect(Effect):
     def apply(self, gamestate):
         DrawEffect(gamestate.blob_cards_played_this_turn).apply(gamestate)
+
+
+class ShopToTopEffect(Effect):
+    def apply(self, gamestate):
+        gamestate.freighter_hauls += 1
 
 
 # Pending Effects (requiring additional input from a player)
@@ -256,3 +281,12 @@ class PendCopyShip(PendEffect):
 
     def _resolve(self, ship):
         CopyShipEffect(ship).apply(self.gamestate)
+
+
+class PendAcquireShipToTopForFree(PendEffect):
+    def apply(self, gamestate):
+        super().apply(gamestate)
+        logging.warning("{} can ACQUIRE A FREE SHIP TO TOP OF DECK".format(gamestate.active_player.name))
+
+    def _resolve(self, ship):
+        AcquireEffect(ship, top_of_deck=True).apply(self.gamestate)

@@ -1,16 +1,15 @@
 from collections import Counter
 from unittest import TestCase
-# Explorers TODO (lol)
 from cards import Scout, Viper, SpaceStation, BattleStation, BarterWorld, RoyalRedoubt, BlobWheel, BlobFighter, \
     Explorer, Cutter, Dreadnaught, TradePod, SurveyShip, PatrolMech, MissileBot, MachineBase, BattlePod, \
     ImperialFighter, RecyclingStation, MechWorld, BrainWorld, MissileMech, TradingPost, BlobDestroyer, StealthNeedle, \
-    TradeBot, BlobWorld
+    TradeBot, BlobWorld, BlobCarrier, Freighter, CentralOffice, EmbassyYacht
 from effects import PendChoice, PendScrap, PendDiscard, PendRecycle, PendBrainWorld, PendDestroyBase, \
-    GainTrade, GainAuthority, GainDamage, PendCopyShip, BlobWorldDrawEffect
+    GainTrade, GainAuthority, GainDamage, PendCopyShip, BlobWorldDrawEffect, PendAcquireShipToTopForFree
 from enums import Zones, ValueTypes, Triggers, Factions
 from gamestate import GameState
 from move import PlayCard, ActivateBase, ActivateAlly, ActivateScrap, Choose, Scrap, EndTurn, Discard, AttackOpponent, \
-    AttackBase, DestroyBase, BuyExplorer, CopyShip
+    AttackBase, DestroyBase, CopyShip, AcquireCard, AcquireShipToTopForFree
 import logging
 
 logging.getLogger().setLevel(logging.ERROR)
@@ -34,6 +33,14 @@ class StarstuffTests(TestCase):
         for base in bases:
             base.location = Zones.IN_PLAY
             self.game.opponent[Zones.IN_PLAY].append(base)
+
+    def _add_cards_to_trade_row(self, *cards):
+        if len(cards) > 5:
+            raise ValueError
+
+        for card in cards:
+            self.game[Zones.TRADE_ROW].pop(0)
+            self.game[Zones.TRADE_ROW].append(card)
 
     def _clear_zones(self, *zones):
         for zone in zones:
@@ -78,6 +85,13 @@ class StarstuffTests(TestCase):
     def assert_in_trade_row(self, card):
         self.assertEqual(card.location, Zones.TRADE_ROW)
         self.assertIn(card, self.game[Zones.TRADE_ROW])
+
+    def assert_on_top_of_deck(self, card=None, explorer=True):
+        top_card = self.game[Zones.DECK][-1]
+        if card:
+            self.assertEqual(top_card, card)
+        elif explorer:
+            self.assertIsInstance(top_card, Explorer)
 
     def assert_scrapped(self, card):
         self.assertEqual(card.location, Zones.SCRAP_HEAP)
@@ -317,7 +331,7 @@ class TestExplorers(StarstuffTests):
 
     def test_buy_explorer(self):
         self.assert_discard_count(0)
-        BuyExplorer().execute(self.game)
+        AcquireCard(explorer=True).execute(self.game)
         self.assert_discard_count(1)
         self.assertIsInstance(self.game[Zones.DISCARD][0], Explorer)
 
@@ -1030,3 +1044,144 @@ class TestBlobWorld(StarstuffTests):
         Choose(BlobWorldDrawEffect).execute(self.game)
         self.assert_hand_count(5)
         self.assert_pending()
+
+
+class TestBlobCarrier(StarstuffTests):
+    def setUp(self):
+        super().setUp()
+        self.blob_carrier = BlobCarrier()
+        self.blob_wheel = BlobWheel()
+        self._add_cards_to_hand(self.blob_carrier, self.blob_wheel)
+        self.cutter = Cutter()
+        self._add_cards_to_trade_row(self.cutter)
+        PlayCard(self.blob_wheel).execute(self.game)
+
+    def test_acquire_explorer(self):
+        PlayCard(self.blob_carrier).execute(self.game)
+        ActivateAlly(self.blob_carrier).execute(self.game)
+        AcquireShipToTopForFree(explorer=True).execute(self.game)
+        self.assert_on_top_of_deck(explorer=True)
+
+    def test_acquire_ship(self):
+        PlayCard(self.blob_carrier).execute(self.game)
+        ActivateAlly(self.blob_carrier).execute(self.game)
+        AcquireShipToTopForFree(self.cutter).execute(self.game)
+        self.assert_on_top_of_deck(self.cutter)
+
+
+class TestFreighter(StarstuffTests):
+    def setUp(self):
+        super().setUp()
+        self.freighter = Freighter()
+        self.cutter = Cutter()
+        self._add_cards_to_hand(self.freighter, self.cutter)
+        self.embassy_yacht = EmbassyYacht()
+        self._add_cards_to_trade_row(self.embassy_yacht)
+        PlayCard(self.freighter).execute(self.game)
+        PlayCard(self.cutter).execute(self.game)
+
+    def test_decline(self):
+        ActivateAlly(self.freighter).execute(self.game)
+        self.assertEqual(self.game.freighter_hauls, 1)
+
+        AcquireCard(self.embassy_yacht).execute(self.game)
+        self.assert_in_discard(self.embassy_yacht)
+        self.assertEqual(self.game.freighter_hauls, 0)
+
+    def test_acquire_explorer(self):
+        ActivateAlly(self.freighter).execute(self.game)
+        self.assertEqual(self.game.freighter_hauls, 1)
+
+        AcquireCard(explorer=True, top_of_deck=True).execute(self.game)
+        self.assert_on_top_of_deck(explorer=True)
+        self.assertEqual(self.game.freighter_hauls, 0)
+
+    def test_acquire_ship(self):
+        ActivateAlly(self.freighter).execute(self.game)
+        self.assertEqual(self.game.freighter_hauls, 1)
+
+        AcquireCard(self.embassy_yacht, top_of_deck=True).execute(self.game)
+        self.assert_on_top_of_deck(self.embassy_yacht)
+        self.assertEqual(self.game.freighter_hauls, 0)
+
+    def test_acquire_base_then_ship(self):
+        ActivateAlly(self.freighter).execute(self.game)
+        self.assertEqual(self.game.freighter_hauls, 1)
+
+        base = BarterWorld()
+        self._add_cards_to_trade_row(base)
+        AcquireCard(base).execute(self.game)
+        self.assertEqual(self.game.freighter_hauls, 1)
+
+        self.game.active_player[ValueTypes.TRADE] += 3
+        AcquireCard(self.embassy_yacht, top_of_deck=True).execute(self.game)
+        self.assert_on_top_of_deck(self.embassy_yacht)
+        self.assertEqual(self.game.freighter_hauls, 0)
+
+
+class TestCarrierFreighterInteraction(StarstuffTests):
+    def setUp(self):
+        super().setUp()
+        self.blob_carrier = BlobCarrier()
+        self.freighter = Freighter()
+        self.central_office = CentralOffice()
+        self._add_cards_to_hand(self.blob_carrier, self.freighter, self.central_office)
+        PlayCard(self.blob_carrier).execute(self.game)
+        PlayCard(self.freighter).execute(self.game)
+        PlayCard(self.central_office).execute(self.game)
+
+        allies = [BarterWorld(), BlobWheel()]
+        self._add_cards_to_hand(*allies)
+        for ally in allies:
+            PlayCard(ally).execute(self.game)
+
+        self.free_ships = [TradeBot(), TradeBot()]
+        self._add_cards_to_trade_row(*self.free_ships)
+
+    def test_carrier_does_not_impact_freighters(self):
+        ActivateAlly(self.freighter).execute(self.game)
+        ActivateAlly(self.blob_carrier).execute(self.game)
+        self.assert_pending(PendAcquireShipToTopForFree)
+        self.assertEqual(self.game.freighter_hauls, 1)
+
+        AcquireShipToTopForFree(self.free_ships[0]).execute(self.game)
+        self.assert_pending()
+        self.assertEqual(self.game.freighter_hauls, 1)
+        self.assert_on_top_of_deck(self.free_ships[0])
+
+        AcquireCard(self.free_ships[1], top_of_deck=True).execute(self.game)
+        self.assertEqual(self.game.freighter_hauls, 0)
+        self.assert_on_top_of_deck(self.free_ships[1])
+
+    def test_freighter_freighter_ship_ship(self):
+        ActivateAlly(self.freighter).execute(self.game)
+        ActivateBase(self.central_office).execute(self.game)
+        self.assertEqual(self.game.freighter_hauls, 2)
+
+        AcquireCard(self.free_ships[0], top_of_deck=True).execute(self.game)
+        self.assert_pending()
+        self.assertEqual(self.game.freighter_hauls, 1)
+        self.assert_on_top_of_deck(self.free_ships[0])
+
+        AcquireCard(self.free_ships[1], top_of_deck=True).execute(self.game)
+        self.assertEqual(self.game.freighter_hauls, 0)
+        self.assert_on_top_of_deck(self.free_ships[1])
+
+    def test_freighter_freighter_ship_base_ship(self):
+        ActivateAlly(self.freighter).execute(self.game)
+        ActivateBase(self.central_office).execute(self.game)
+        self.assertEqual(self.game.freighter_hauls, 2)
+
+        AcquireCard(self.free_ships[0], top_of_deck=True).execute(self.game)
+        self.assert_pending()
+        self.assertEqual(self.game.freighter_hauls, 1)
+        self.assert_on_top_of_deck(self.free_ships[0])
+
+        barter_world = BarterWorld()
+        self._add_cards_to_trade_row(barter_world)
+        AcquireCard(barter_world).execute(self.game)
+        self.assertEqual(self.game.freighter_hauls, 1)
+
+        AcquireCard(self.free_ships[1], top_of_deck=True).execute(self.game)
+        self.assertEqual(self.game.freighter_hauls, 0)
+        self.assert_on_top_of_deck(self.free_ships[1])

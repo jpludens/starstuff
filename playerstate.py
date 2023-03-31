@@ -57,10 +57,10 @@ class PlayerState(object):
     def draw(self, n=5):
         for i in range(n):
             try:
-                card = self[Zones.DECK].pop(0)
+                card = self[Zones.DECK].pop()
             except IndexError:
                 self.shuffle_deck()
-                card = self[Zones.DECK].pop(0)
+                card = self[Zones.DECK].pop()
 
             card.move_to(Zones.HAND)
             self[Zones.HAND].append(card)
