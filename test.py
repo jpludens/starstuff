@@ -1237,3 +1237,38 @@ class TestFleetHQ(StarstuffTests):
         for card in list(self.game[Zones.HAND]):
             PlayCard(card).execute(self.game)
         self.assert_damage(3)
+
+
+class TestEmbassyYacht(StarstuffTests):
+    def setUp(self):
+        super().setUp()
+        self.embassy_yacht = EmbassyYacht()
+        self.bases = [BarterWorld(), TradingPost()]
+        self._add_cards_to_hand(self.embassy_yacht, *self.bases)
+
+    def test_no_bases(self):
+        self.assert_hand_count(6)
+
+        PlayCard(self.embassy_yacht).execute(self.game)
+        self.assert_hand_count(5)
+        self.assert_authority(53)
+        self.assert_trade(2)
+
+    def test_one_base(self):
+        PlayCard(self.bases[0]).execute(self.game)
+        self.assert_hand_count(5)
+
+        PlayCard(self.embassy_yacht).execute(self.game)
+        self.assert_hand_count(4)
+        self.assert_authority(53)
+        self.assert_trade(2)
+
+    def test_two_bases(self):
+        PlayCard(self.bases[0]).execute(self.game)
+        PlayCard(self.bases[1]).execute(self.game)
+        self.assert_hand_count(4)
+
+        PlayCard(self.embassy_yacht).execute(self.game)
+        self.assert_hand_count(5)
+        self.assert_authority(53)
+        self.assert_trade(2)

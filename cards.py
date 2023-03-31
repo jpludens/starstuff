@@ -1,6 +1,6 @@
 from effects import ValueEffect, DrawEffect, OpponentDiscardEffect, PendChoice, PendScrap, PendRecycle, \
     GainFactionEffect, PendBrainWorld, PendDestroyBase, GainTrade, GainAuthority, GainDamage, PendCopyShip, \
-    BlobWorldDrawEffect, PendAcquireShipToTopForFree, ShopToTopEffect, MachineBaseEffect
+    BlobWorldDrawEffect, PendAcquireShipToTopForFree, ShopToTopEffect, MachineBaseEffect, EmbassyYachtDrawEffect
 from enums import Triggers, CardTypes, Factions, Zones
 
 
@@ -327,7 +327,7 @@ class EmbassyYacht(Card):
         Triggers.SHIP: {
             GainAuthority(3),
             GainTrade(2),
-            "Embassy Draw"
+            EmbassyYachtDrawEffect()
         }
     }
 

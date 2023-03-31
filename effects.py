@@ -181,6 +181,12 @@ class ShopToTopEffect(Effect):
         gamestate.freighter_hauls += 1
 
 
+class EmbassyYachtDrawEffect(Effect):
+    def apply(self, gamestate):
+        if len([c for c in gamestate[Zones.IN_PLAY] if c.card_type in [CardTypes.BASE, CardTypes.OUTPOST]]) >= 2:
+            DrawEffect(2).apply(gamestate)
+
+
 # Pending Effects (requiring additional input from a player)
 class PendEffect(Effect, ABC):
     def __init__(self):
