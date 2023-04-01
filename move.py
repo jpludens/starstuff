@@ -39,9 +39,6 @@ class AbilityActivation(Move, ABC):
         for effect in self.card.trigger_ability(self.trigger):
             # These need to occur in this order so that effects will apply to this card
             gamestate.last_activated_card = self.card
-            if isinstance(effect, str):
-                logging.warning("Skipping this one for now: ")
-                continue
             effect.apply(gamestate)
 
 

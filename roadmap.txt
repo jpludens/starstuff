@@ -1,26 +1,17 @@
-Goal: Implement remaining abilities
-   Blob Destroyer
-        requires multiple pending effects
-        I refuse to treat them as ordered at any point in the code whatsoever
-        card.abilities will map triggers to /lists/
-        values will be a tuple so that initializing cards doesn't require creating a bunch of ValueEffects
-        probably just create ChoiceEffect at the card declaration instead of in trigger_abilities
-        blob destroyers will be a list of effects instead of a single effect
+Goal: Organize tests into separate files
+Goal: Fully implement Move validation
+        (some classes are just rubberstamping)
+Goal: Rejigger move validation to permit "neutral" moves when an effect is pending but not mandatory
+        (I do not want Strategy classes to have to explicitly send Scrap() or Destroy() moves bc that would get old)
+Goal: Create a Select() move that satisfies all pending effects
+        (ActivateBase(recyclying_station); Select(scout, viper))
 
-   Stealth Needle
-         Target move
-   Blob Carrier
-   Fleet HQ
-          introduce a check that examines all moves for Actions.Play with a card with CardType.SHIP
-          effect needs to end when base leaves play
-          add a "source" field to effects
-   Freighter / Central Office
-        count available topdecks
-        "topdeck" is like buy ... but topdecks. both reduce tracked topdeck counts
-   Embassy Yacht
-          Conditionality
-   Blob World
-         gamestate needs to keep an examinable log of turn actions to be searched for Actions.PLAY/Factions.BLOB
+Goal? Generalize conditionality; e.g. Embassy Yacht
+Goal? Generalize passive effects; e.g. Fleet HQ
+Goal? Put Move validation and execution back in gamestate
+        (current implementation is fine for toying around with,
+         but is massively insecure if there is ever a web client providing Move objects)
+
 
 Goal: Use a Strategy class to trigger deterministic abilities
 Goal: use a Strategy class to mimic app
