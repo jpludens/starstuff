@@ -1,8 +1,8 @@
 import logging
 from abc import ABC
 
-from enums import Zones, ValueTypes, Triggers, CardTypes, Factions
-from util import move_list_item
+from enums.enums import Zones, ValueTypes, Triggers, CardTypes, Factions
+from util.util import move_list_item
 
 
 class Effect(object):

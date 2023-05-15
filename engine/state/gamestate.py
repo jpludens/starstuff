@@ -2,10 +2,10 @@ import logging
 from itertools import cycle
 from random import shuffle
 
-from cards import Explorer
-from enums import Zones
-from playerstate import PlayerState
-from decks import get_fresh_trade_deck
+from components.cards import Explorer
+from enums.enums import Zones
+from engine.state.playerstate import PlayerState
+from components.decks import get_fresh_trade_deck
 
 
 logger = logging.getLogger()

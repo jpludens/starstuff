@@ -1,9 +1,9 @@
 from collections import Counter
 from pprint import PrettyPrinter
 
-from enums import Factions
-from gamestate import GameState
-from strategies import FactionStrategy
+from enums.enums import Factions
+from engine.state.gamestate import GameState
+from strategies.faction_strategy import FactionStrategy
 
 
 def play_game():

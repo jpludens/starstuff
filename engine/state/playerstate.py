@@ -1,9 +1,9 @@
 from random import shuffle
 from collections import Counter
 
-from cards import Scout, Viper
-from util import move_list_item
-from enums import ValueTypes, Zones
+from components.cards import Scout, Viper
+from util.util import move_list_item
+from enums.enums import ValueTypes, Zones
 
 
 class PlayerState(object):

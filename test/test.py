@@ -1,15 +1,15 @@
 from collections import Counter
 from unittest import TestCase
-from cards import Scout, Viper, SpaceStation, BattleStation, BarterWorld, RoyalRedoubt, BlobWheel, BlobFighter, \
-    Explorer, Cutter, Dreadnaught, TradePod, SurveyShip, PatrolMech, MissileBot, MachineBase, BattlePod, \
+from components.cards import Scout, Viper, SpaceStation, BattleStation, BarterWorld, RoyalRedoubt, BlobWheel, \
+    BlobFighter, Explorer, Cutter, Dreadnaught, TradePod, SurveyShip, PatrolMech, MissileBot, MachineBase, BattlePod, \
     ImperialFighter, RecyclingStation, MechWorld, BrainWorld, MissileMech, TradingPost, BlobDestroyer, StealthNeedle, \
     TradeBot, BlobWorld, BlobCarrier, Freighter, CentralOffice, EmbassyYacht, FleetHQ
-from effects import PendChoice, PendScrap, PendDiscard, PendRecycle, PendBrainWorld, PendDestroyBase, \
+from engine.effects import PendChoice, PendScrap, PendDiscard, PendRecycle, PendBrainWorld, PendDestroyBase, \
     GainTrade, GainAuthority, GainDamage, PendCopyShip, BlobWorldDrawEffect, PendAcquireShipToTopForFree
-from enums import Zones, ValueTypes, Triggers, Factions
-from gamestate import GameState
-from move import PlayCard, ActivateBase, ActivateAlly, ActivateScrap, Choose, Scrap, EndTurn, Discard, AttackOpponent, \
-    AttackBase, DestroyBase, CopyShip, AcquireCard, AcquireShipToTopForFree
+from enums.enums import Zones, ValueTypes, Triggers, Factions
+from engine.state.gamestate import GameState
+from engine.move import PlayCard, ActivateBase, ActivateAlly, ActivateScrap, Choose, Scrap, EndTurn, Discard,\
+    AttackOpponent, AttackBase, DestroyBase, CopyShip, AcquireCard, AcquireShipToTopForFree
 import logging
 
 logging.getLogger().setLevel(logging.ERROR)

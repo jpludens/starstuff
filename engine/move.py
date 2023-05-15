@@ -1,11 +1,11 @@
 import logging
 from abc import ABC
 
-from cards import Explorer, FleetHQ
-from effects import PendScrap, PendChoice, PendDiscard, DestroyBaseEffect, PendDestroyBase, PendCopyShip, AcquireEffect, \
-    PendAcquireShipToTopForFree, GainDamage
-from enums import Zones, CardTypes, Triggers, ValueTypes, Factions
-from util import move_list_item
+from components.cards import Explorer, FleetHQ
+from engine.effects import PendScrap, PendChoice, PendDiscard, DestroyBaseEffect, PendDestroyBase, PendCopyShip,\
+    AcquireEffect, PendAcquireShipToTopForFree, GainDamage
+from enums.enums import Zones, CardTypes, Triggers, ValueTypes, Factions
+from util.util import move_list_item
 
 
 class Move(ABC):

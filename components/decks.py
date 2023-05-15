@@ -1,5 +1,5 @@
-from cards import *
-from enums import Zones
+from components.cards import *
+from enums.enums import Zones
 
 standard_deck = {
     BlobFighter: 3,
