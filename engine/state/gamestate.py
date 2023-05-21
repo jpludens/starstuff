@@ -29,7 +29,7 @@ class GameState(object):
         self.turn_number = 1
         self._turn_order = cycle([player1, player2])
         self.active_player = next(self._turn_order)
-        self.opponent = player2
+        self.inactive_player = player2
 
         self.victor = None
         self.pending_effects = []
@@ -46,7 +46,7 @@ class GameState(object):
         except KeyError:
             try:
                 # This allows player-state access without a player id, but only to the active player.
-                # This works untless we need to start accessing the inactive player's stuff,
+                # This works unless we need to start accessing the inactive player's stuff,
                 return self.active_player[key]
             except KeyError:
                 if key == Zones.TRADE_ROW:
@@ -82,6 +82,6 @@ class GameState(object):
         self.active_player.end_turn()  # The King is dead.
         self.turn_number += 1
         self.blob_cards_played_this_turn = 0
-        self.opponent = self.active_player
+        self.inactive_player = self.active_player
         self.active_player = next(self._turn_order)
         self.active_player.start_turn()  # Long live the King!

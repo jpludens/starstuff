@@ -1,3 +1,7 @@
+Notes:
+    Calculating an entire view after every move is probably unnecessary.
+
+~~ Backlog ~~
 Goal: Organize tests into separate files
 Goal: Fully implement Move validation
         (some classes are just rubberstamping)

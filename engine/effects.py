@@ -98,10 +98,10 @@ class OpponentDiscardEffect(Effect):
         if gamestate.forced_discards:
             gamestate.forced_discards += 1
             logging.warning("{} must now DISCARD {} cards at start of turn".format(
-                gamestate.opponent.name, gamestate.forced_discards))
+                gamestate.inactive_player.name, gamestate.forced_discards))
         else:
             gamestate.forced_discards = 1
-            logging.warning("{} must DISCARD 1 card at start of turn".format(gamestate.opponent.name))
+            logging.warning("{} must DISCARD 1 card at start of turn".format(gamestate.inactive_player.name))
 
 
 class GainFactionEffect(Effect):
@@ -122,8 +122,8 @@ class DestroyBaseEffect(Effect):
             logging.warning("{} DESTROYS {}".format(gamestate.active_player.name, self.base.name))
             self.base.move_to(Zones.DISCARD)
             move_list_item(self.base,
-                           gamestate.opponent[Zones.IN_PLAY],
-                           gamestate.opponent[Zones.DISCARD])
+                           gamestate.inactive_player[Zones.IN_PLAY],
+                           gamestate.inactive_player[Zones.DISCARD])
         else:
             logging.warning("{} does not destroy a base".format(gamestate.active_player.name))
 
@@ -168,7 +168,7 @@ class CopyShipEffect(Effect):
 class MachineBaseEffect(Effect):
     def apply(self, gamestate):
         DrawEffect(1).apply(gamestate)
-        PendScrap(Zones.HAND, mandatory=True).apply(gamestate)
+        PendCultScrap(Zones.HAND, mandatory=True).apply(gamestate)
 
 
 class BlobWorldDrawEffect(Effect):
@@ -207,7 +207,7 @@ class PendEffect(Effect, ABC):
 
 class PendDestroyBase(PendEffect):
     def apply(self, gamestate):
-        if any(gamestate.opponent[Zones.IN_PLAY]):
+        if any(gamestate.inactive_player[Zones.IN_PLAY]):
             logging.warning("{} can DESTROY a Base".format(gamestate.active_player.name))
             super().apply(gamestate)
 
@@ -229,7 +229,23 @@ class PendChoice(PendEffect):
         self.choices[choice].apply(self.gamestate)
 
 
-class PendScrap(PendEffect):
+class PendBlobScrap(PendEffect):
+    def __init__(self):
+        super().__init__()
+
+    def apply(self, gamestate):
+        if any([gamestate[Zones.TRADE_ROW]]):
+            super().apply(gamestate)
+            logging.warning("{} may SCRAP from: TRADE_ROW".format(gamestate.active_player.name))
+        else:
+            logging.warning("No cards to scrap in: TRADE_ROW")
+
+    def _resolve(self, card=None):
+        effect = ScrapEffect([card]) if card else ScrapEffect([])
+        effect.apply(self.gamestate)
+
+
+class PendCultScrap(PendEffect):
     def __init__(self, *zones, up_to=1, mandatory=False):
         super().__init__()
         self.zones = list(zones)
@@ -250,7 +266,7 @@ class PendScrap(PendEffect):
         ScrapEffect(cards).apply(self.gamestate)
 
 
-class PendBrainWorld(PendScrap):
+class PendBrainWorld(PendCultScrap):
     def __init__(self):
         super().__init__(Zones.HAND, Zones.DISCARD, up_to=2, mandatory=False)
 

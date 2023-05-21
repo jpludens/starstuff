@@ -2,8 +2,8 @@ import logging
 from abc import ABC
 
 from components.cards import Explorer, FleetHQ
-from engine.effects import PendScrap, PendChoice, PendDiscard, DestroyBaseEffect, PendDestroyBase, PendCopyShip,\
-    AcquireEffect, PendAcquireShipToTopForFree, GainDamage
+from engine.effects import PendCultScrap, PendChoice, PendDiscard, DestroyBaseEffect, PendDestroyBase, PendCopyShip, \
+    AcquireEffect, PendAcquireShipToTopForFree, GainDamage, PendBlobScrap
 from enums.enums import Zones, CardTypes, Triggers, ValueTypes, Factions
 from util.util import move_list_item
 
@@ -140,7 +140,7 @@ class AttackBase(Move):
 
     def _validate(self, gamestate):
         if self.base.card_type != CardTypes.OUTPOST:
-            if any([c.card_type == CardTypes.OUTPOST for c in gamestate.opponent[Zones.IN_PLAY]]):
+            if any([c.card_type == CardTypes.OUTPOST for c in gamestate.inactive_player[Zones.IN_PLAY]]):
                 raise FileNotFoundError
 
     def _execute(self, gamestate):
@@ -153,27 +153,24 @@ class AttackBase(Move):
 
 
 class AttackOpponent(Move):
-    def __init__(self, opponent):
-        self.opponent = opponent
-
     def _validate(self, gamestate):
-        opponent_has_outpost = any([c.card_type == CardTypes.OUTPOST for c in gamestate.opponent[Zones.IN_PLAY]])
+        opponent_has_outpost = any([c.card_type == CardTypes.OUTPOST for c in gamestate.inactive_player[Zones.IN_PLAY]])
         if opponent_has_outpost:
             raise FileNotFoundError
 
     def _execute(self, gamestate):
         logging.warning("{} is ATTACKING {} for {} damage!".format(
             gamestate.active_player.name,
-            self.opponent.name,
+            gamestate.inactive_player.name,
             gamestate.active_player[ValueTypes.DAMAGE]))
 
-        self.opponent[ValueTypes.AUTHORITY] -= gamestate.active_player[ValueTypes.DAMAGE]
+        gamestate.inactive_player[ValueTypes.AUTHORITY] -= gamestate.active_player[ValueTypes.DAMAGE]
         gamestate.active_player[ValueTypes.DAMAGE] = 0
 
-        logging.warning("{} has {} AUTHORITY remaining".format(self.opponent.name,
-                                                               self.opponent[ValueTypes.AUTHORITY]))
+        logging.warning("{} has {} AUTHORITY remaining".format(gamestate.inactive_player.name,
+                                                               gamestate.inactive_player[ValueTypes.AUTHORITY]))
 
-        if gamestate.opponent[ValueTypes.AUTHORITY] <= 0:
+        if gamestate.inactive_player[ValueTypes.AUTHORITY] <= 0:
             gamestate.victor = gamestate.active_player.name
 
 
@@ -241,7 +238,7 @@ class Choose(PendingMove):
 
 
 class Scrap(PendingMove):
-    resolved_effect_type = PendScrap
+    resolved_effect_type = PendCultScrap
 
     def __init__(self, *targets):
         super().__init__()
@@ -259,6 +256,40 @@ class Scrap(PendingMove):
         self.effect.resolve(self.targets)
 
 
+class CultScrap(PendingMove):
+    resolved_effect_type = PendCultScrap
+
+    def __init__(self, *targets):
+        super().__init__()
+        self.targets = targets
+
+    def _validate(self, gamestate):
+        for target in self.targets:
+            if target.location not in self.effect.zones:
+                raise FileNotFoundError
+        if self.effect.mandatory:
+            if len(self.targets) < self.effect.up_to:
+                raise FileNotFoundError
+
+    def _resolve_effect(self):
+        self.effect.resolve(self.targets)
+
+
+class BlobScrap(PendingMove):
+    resolved_effect_type = PendBlobScrap
+
+    def __init__(self, target=None):
+        super().__init__()
+        self.target = target
+
+    def _validate(self, gamestate):
+        if self.target and self.target not in gamestate.trade_row:
+            raise FileNotFoundError
+
+    def _resolve_effect(self):
+        self.effect.resolve(self.target)
+
+
 class DestroyBase(PendingMove):
     resolved_effect_type = PendDestroyBase
 
@@ -267,7 +298,7 @@ class DestroyBase(PendingMove):
         self.target = target
 
     def _validate(self, gamestate):
-        opponent_has_outpost = any([c.card_type == CardTypes.OUTPOST for c in gamestate.opponent[Zones.IN_PLAY]])
+        opponent_has_outpost = any([c.card_type == CardTypes.OUTPOST for c in gamestate.inactive_player[Zones.IN_PLAY]])
         if opponent_has_outpost and self.target.card_type != CardTypes.OUTPOST:
             raise FileNotFoundError
 

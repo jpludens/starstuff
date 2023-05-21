@@ -1,12 +1,13 @@
-from engine.effects import ValueEffect, DrawEffect, OpponentDiscardEffect, PendChoice, PendScrap, PendRecycle, \
+from engine.effects import ValueEffect, DrawEffect, OpponentDiscardEffect, PendChoice, PendCultScrap, PendRecycle, \
     GainFactionEffect, PendBrainWorld, PendDestroyBase, GainTrade, GainAuthority, GainDamage, PendCopyShip, \
-    BlobWorldDrawEffect, PendAcquireShipToTopForFree, ShopToTopEffect, MachineBaseEffect, EmbassyYachtDrawEffect
+    BlobWorldDrawEffect, PendAcquireShipToTopForFree, ShopToTopEffect, MachineBaseEffect, EmbassyYachtDrawEffect, \
+    PendBlobScrap
 from enums.enums import Triggers, CardTypes, Factions, Zones
 
 
 DRAW_ONE = DrawEffect(1)
-SCRAP_FROM_TRADE_ROW = PendScrap(Zones.TRADE_ROW)
-SCRAP_FROM_HAND_OR_DISCARD = PendScrap(Zones.HAND, Zones.DISCARD)
+SCRAP_FROM_TRADE_ROW = PendBlobScrap()
+SCRAP_FROM_HAND_OR_DISCARD = PendCultScrap(Zones.HAND, Zones.DISCARD)
 DISCARD = OpponentDiscardEffect()
 DESTROY_BASE = PendDestroyBase()
 

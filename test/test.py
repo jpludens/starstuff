@@ -4,12 +4,12 @@ from components.cards import Scout, Viper, SpaceStation, BattleStation, BarterWo
     BlobFighter, Explorer, Cutter, Dreadnaught, TradePod, SurveyShip, PatrolMech, MissileBot, MachineBase, BattlePod, \
     ImperialFighter, RecyclingStation, MechWorld, BrainWorld, MissileMech, TradingPost, BlobDestroyer, StealthNeedle, \
     TradeBot, BlobWorld, BlobCarrier, Freighter, CentralOffice, EmbassyYacht, FleetHQ
-from engine.effects import PendChoice, PendScrap, PendDiscard, PendRecycle, PendBrainWorld, PendDestroyBase, \
-    GainTrade, GainAuthority, GainDamage, PendCopyShip, BlobWorldDrawEffect, PendAcquireShipToTopForFree
+from engine.effects import PendChoice, PendCultScrap, PendDiscard, PendRecycle, PendBrainWorld, PendDestroyBase, \
+    GainTrade, GainAuthority, GainDamage, PendCopyShip, BlobWorldDrawEffect, PendAcquireShipToTopForFree, PendBlobScrap
 from enums.enums import Zones, ValueTypes, Triggers, Factions
 from engine.state.gamestate import GameState
-from engine.move import PlayCard, ActivateBase, ActivateAlly, ActivateScrap, Choose, Scrap, EndTurn, Discard,\
-    AttackOpponent, AttackBase, DestroyBase, CopyShip, AcquireCard, AcquireShipToTopForFree
+from engine.move import PlayCard, ActivateBase, ActivateAlly, ActivateScrap, Choose, CultScrap, EndTurn, Discard, \
+    AttackOpponent, AttackBase, DestroyBase, CopyShip, AcquireCard, AcquireShipToTopForFree, BlobScrap
 import logging
 
 logging.getLogger().setLevel(logging.ERROR)
@@ -32,7 +32,7 @@ class StarstuffTests(TestCase):
     def _add_bases_to_opponent(self, *bases):
         for base in bases:
             base.location = Zones.IN_PLAY
-            self.game.opponent[Zones.IN_PLAY].append(base)
+            self.game.inactive_player[Zones.IN_PLAY].append(base)
 
     def _add_cards_to_trade_row(self, *cards):
         if len(cards) > 5:
@@ -104,21 +104,21 @@ class StarstuffTests(TestCase):
         self.assertNotIn(card, self.game[Zones.DECK])
         self.assertNotIn(card, self.game[Zones.DISCARD])
 
-        self.assertNotIn(card, self.game.opponent[Zones.IN_PLAY])
-        self.assertNotIn(card, self.game.opponent[Zones.HAND])
-        self.assertNotIn(card, self.game.opponent[Zones.DECK])
-        self.assertNotIn(card, self.game.opponent[Zones.DISCARD])
+        self.assertNotIn(card, self.game.inactive_player[Zones.IN_PLAY])
+        self.assertNotIn(card, self.game.inactive_player[Zones.HAND])
+        self.assertNotIn(card, self.game.inactive_player[Zones.DECK])
+        self.assertNotIn(card, self.game.inactive_player[Zones.DISCARD])
 
     def assert_opponent_authority(self, n):
-        self.assertEqual(self.game.opponent[ValueTypes.AUTHORITY], n)
+        self.assertEqual(self.game.inactive_player[ValueTypes.AUTHORITY], n)
 
     def assert_in_opponent_discard(self, card):
         self.assertEqual(card.location, Zones.DISCARD)
-        self.assertIn(card, self.game.opponent[Zones.DISCARD])
+        self.assertIn(card, self.game.inactive_player[Zones.DISCARD])
 
     def assert_in_opponent_in_play(self, card):
         self.assertEqual(card.location, Zones.IN_PLAY)
-        self.assertIn(card, self.game.opponent[Zones.IN_PLAY])
+        self.assertIn(card, self.game.inactive_player[Zones.IN_PLAY])
 
     def assert_opponent_discards(self, n):
         self.assertEqual(self.game.forced_discards, n)
@@ -184,7 +184,7 @@ class TestBases(StarstuffTests):
 class TestAttackOpponent(StarstuffTests):
     def test_normal_attack(self):
         self._set_damage(10)
-        AttackOpponent(self.game.opponent).execute(self.game)
+        AttackOpponent().execute(self.game)
 
         self.assert_opponent_authority(40)
         self.assertIsNone(self.game.victor)
@@ -192,14 +192,14 @@ class TestAttackOpponent(StarstuffTests):
     def test_winning_attack_with_base(self):
         self._set_damage(50)
         self._add_bases_to_opponent(BarterWorld())
-        AttackOpponent(self.game.opponent).execute(self.game)
+        AttackOpponent().execute(self.game)
 
         self.assert_opponent_authority(0)
         self.assertEqual(self.game.victor, self.game.active_player.name)
 
     def test_outpost_mechanic(self):
         self._add_bases_to_opponent(RoyalRedoubt())
-        self.assertRaises(FileNotFoundError, AttackOpponent(self.game.opponent).execute, self.game)
+        self.assertRaises(FileNotFoundError, AttackOpponent().execute, self.game)
 
 
 class TestAttackBase(StarstuffTests):
@@ -444,33 +444,33 @@ class TestMachineCultScrapEffect(StarstuffTests):
 
     def test_scrap_from_hand(self):
         PlayCard(self.missile_bot).execute(self.game)
-        self.assert_pending(PendScrap)
+        self.assert_pending(PendCultScrap)
         self.assert_hand_count(3)
 
         target = self.game[Zones.HAND][0]
-        Scrap(target).execute(self.game)
+        CultScrap(target).execute(self.game)
         self.assert_hand_count(2)
         self.assert_scrapped(target)
         self.assert_pending()
 
     def test_scrap_from_discard(self):
         PlayCard(self.missile_bot).execute(self.game)
-        self.assert_pending(PendScrap)
+        self.assert_pending(PendCultScrap)
         self.assert_discard_count(1)
 
         target = self.game[Zones.DISCARD][0]
-        Scrap(target).execute(self.game)
+        CultScrap(target).execute(self.game)
         self.assert_discard_count(0)
         self.assert_scrapped(target)
         self.assert_pending()
 
     def test_scrap_nothing(self):
         PlayCard(self.missile_bot).execute(self.game)
-        self.assert_pending(PendScrap)
+        self.assert_pending(PendCultScrap)
         self.assert_hand_count(3)
         self.assert_discard_count(1)
 
-        Scrap().execute(self.game)
+        CultScrap().execute(self.game)
         self.assert_hand_count(3)
         self.assert_discard_count(1)
         self.assert_pending()
@@ -478,7 +478,7 @@ class TestMachineCultScrapEffect(StarstuffTests):
     def test_scrap_invalid_target(self):
         PlayCard(self.missile_bot).execute(self.game)
         target = self.game[Zones.DECK][0]
-        self.assertRaises(FileNotFoundError, Scrap(target).execute, self.game)
+        self.assertRaises(FileNotFoundError, CultScrap(target).execute, self.game)
 
     def test_scrap_effect_with_no_valid_targets(self):
         self._clear_zones(Zones.DISCARD)
@@ -497,12 +497,12 @@ class TestMachineBase(StarstuffTests):
 
     def test_must_scrap(self):
         ActivateBase(self.base).execute(self.game)
-        self.assertRaises(FileNotFoundError, Scrap().execute, self.game)
+        self.assertRaises(FileNotFoundError, CultScrap().execute, self.game)
 
     def test_cannot_scrap_from_discard(self):
         self._add_cards_to_discard(Viper())
         ActivateBase(self.base).execute(self.game)
-        self.assertRaises(FileNotFoundError, Scrap(self.game[Zones.DISCARD][0]).execute, self.game)
+        self.assertRaises(FileNotFoundError, CultScrap(self.game[Zones.DISCARD][0]).execute, self.game)
 
     def test_activate_with_no_hand_no_deck_full_discard(self):
         self.game[Zones.HAND].clear()
@@ -513,7 +513,7 @@ class TestMachineBase(StarstuffTests):
         self.assert_hand_count(1)
         self.assert_deck_count(2)
         self.assert_discard_count(0)
-        self.assert_pending(PendScrap)
+        self.assert_pending(PendCultScrap)
 
     def test_activate_with_full_hand_no_deck_no_discard(self):
         self.game[Zones.DECK].clear()
@@ -523,7 +523,7 @@ class TestMachineBase(StarstuffTests):
         self.assert_hand_count(3)
         self.assert_deck_count(0)
         self.assert_discard_count(0)
-        self.assert_pending(PendScrap)
+        self.assert_pending(PendCultScrap)
 
     def test_activate_with_no_hand_no_deck_no_discard(self):
         self.game[Zones.HAND].clear()
@@ -542,21 +542,21 @@ class TestBlobScrapEffect(StarstuffTests):
 
     def test_scrap_from_trade_row(self):
         PlayCard(self.battle_pod).execute(self.game)
-        self.assert_pending(PendScrap)
+        self.assert_pending(PendBlobScrap)
         cards_in_trade_deck_at_start = len(self.game[Zones.TRADE_DECK])
 
         target = self.game[Zones.TRADE_ROW][0]
-        Scrap(target).execute(self.game)
+        BlobScrap(target).execute(self.game)
         self.assertEqual(len(self.game[Zones.TRADE_DECK]), cards_in_trade_deck_at_start - 1)
         self.assert_scrapped(target)
         self.assert_pending()
 
     def test_decline_scrap_from_trade_row(self):
         PlayCard(self.battle_pod).execute(self.game)
-        self.assert_pending(PendScrap)
+        self.assert_pending(PendBlobScrap)
         cards_in_trade_deck_at_start = len(self.game[Zones.TRADE_DECK])
 
-        Scrap().execute(self.game)
+        BlobScrap().execute(self.game)
         self.assertEqual(len(self.game[Zones.TRADE_DECK]), cards_in_trade_deck_at_start)
         self.assert_pending()
 
@@ -565,9 +565,9 @@ class TestBlobScrapEffect(StarstuffTests):
         self.game[Zones.TRADE_ROW].pop()
 
         PlayCard(self.battle_pod).execute(self.game)
-        self.assert_pending(PendScrap)
+        self.assert_pending(PendBlobScrap)
 
-        Scrap(self.game[Zones.TRADE_ROW][0]).execute(self.game)
+        BlobScrap(self.game[Zones.TRADE_ROW][0]).execute(self.game)
         self.assertEqual(len(self.game[Zones.TRADE_ROW]), 3)
         self.assert_pending()
 
@@ -733,7 +733,7 @@ class TestBrainWorld(StarstuffTests):
         ActivateBase(self.brain_world).execute(self.game)
         self.assert_pending(PendBrainWorld)
 
-        Scrap().execute(self.game)
+        CultScrap().execute(self.game)
         self.assert_hand_count(3)
         self.assert_deck_count(7)
         self.assert_discard_count(0)
@@ -746,7 +746,7 @@ class TestBrainWorld(StarstuffTests):
         self.assert_hand_count(3)
         self.assert_deck_count(7)
         self.assert_discard_count(1)
-        Scrap(*targets).execute(self.game)
+        CultScrap(*targets).execute(self.game)
 
         self.assert_scrapped(targets[0])
         self.assert_scrapped(targets[1])
@@ -763,7 +763,7 @@ class TestBrainWorld(StarstuffTests):
         self.assert_hand_count(3)
         self.assert_deck_count(0)
         self.assert_discard_count(2)
-        Scrap(*targets).execute(self.game)
+        CultScrap(*targets).execute(self.game)
 
         self.assert_scrapped(targets[0])
         self.assert_scrapped(targets[1])
@@ -780,7 +780,7 @@ class TestBrainWorld(StarstuffTests):
         self.assert_hand_count(3)
         self.assert_deck_count(0)
         self.assert_discard_count(1)
-        Scrap(*targets).execute(self.game)
+        CultScrap(*targets).execute(self.game)
 
         self.assert_scrapped(targets[0])
         self.assert_scrapped(targets[1])
@@ -809,7 +809,7 @@ class TestDestroyBaseEffect(StarstuffTests):
 
         DestroyBase().execute(self.game)
         self.assert_pending()
-        self.assertEqual(len(self.game.opponent[Zones.IN_PLAY]), 1)
+        self.assertEqual(len(self.game.inactive_player[Zones.IN_PLAY]), 1)
 
     def test_destroy_single_base(self):
         self._add_bases_to_opponent(self.base)
@@ -857,9 +857,9 @@ class TestMultiplePendingEffectsViaBlobDestroyer(StarstuffTests):
         self.assert_pending()
 
         ActivateAlly(self.blob_destroyer).execute(self.game)
-        self.assert_pending(PendDestroyBase, PendScrap)
+        self.assert_pending(PendDestroyBase, PendBlobScrap)
 
-        Scrap().execute(self.game)
+        BlobScrap().execute(self.game)
         self.assert_pending(PendDestroyBase)
 
         DestroyBase().execute(self.game)
@@ -870,9 +870,9 @@ class TestMultiplePendingEffectsViaBlobDestroyer(StarstuffTests):
         self.assert_pending()
 
         ActivateAlly(self.blob_destroyer).execute(self.game)
-        self.assert_pending(PendScrap)
+        self.assert_pending(PendBlobScrap)
 
-        Scrap().execute(self.game)
+        BlobScrap().execute(self.game)
         self.assert_pending()
 
     def test_no_trade_row(self):
@@ -901,10 +901,10 @@ class TestMultiplePendingEffectsViaBlobDestroyer(StarstuffTests):
         self.assert_pending()
 
         ActivateAlly(self.blob_destroyer).execute(self.game)
-        self.assert_pending(PendDestroyBase, PendScrap)
+        self.assert_pending(PendDestroyBase, PendBlobScrap)
 
         initial_trade_deck_count = len(self.game[Zones.TRADE_DECK])
-        Scrap(self.scrap_target).execute(self.game)
+        BlobScrap(self.scrap_target).execute(self.game)
         self.assert_pending(PendDestroyBase)
         self.assert_scrapped(self.scrap_target)
         self.assertEqual(len(self.game[Zones.TRADE_DECK]), initial_trade_deck_count - 1)
@@ -920,15 +920,15 @@ class TestMultiplePendingEffectsViaBlobDestroyer(StarstuffTests):
         self.assert_pending()
 
         ActivateAlly(self.blob_destroyer).execute(self.game)
-        self.assert_pending(PendDestroyBase, PendScrap)
+        self.assert_pending(PendDestroyBase, PendBlobScrap)
 
         DestroyBase(self.base).execute(self.game)
-        self.assert_pending(PendScrap)
+        self.assert_pending(PendBlobScrap)
         self.assert_in_opponent_discard(self.base)
 
         self.assert_in_trade_row(self.scrap_target)
         initial_trade_deck_count = len(self.game[Zones.TRADE_DECK])
-        Scrap(self.scrap_target).execute(self.game)
+        BlobScrap(self.scrap_target).execute(self.game)
         self.assert_pending()
         self.assert_scrapped(self.scrap_target)
         self.assertEqual(len(self.game[Zones.TRADE_DECK]), initial_trade_deck_count - 1)
@@ -985,13 +985,13 @@ class TestCopyShipEffectViaStealthNeedle(StarstuffTests):
         self._add_cards_to_hand(scout, trade_bot)
         PlayCard(scout).execute(self.game)
         PlayCard(trade_bot).execute(self.game)
-        Scrap().execute(self.game)
+        CultScrap().execute(self.game)
         self.assert_trade(2)
         self.assert_damage(0)
 
         PlayCard(self.needle).execute(self.game)
         CopyShip(trade_bot).execute(self.game)
-        Scrap().execute(self.game)
+        CultScrap().execute(self.game)
         self.assert_trade(3)
         self.assertCountEqual(self.game.active_player.active_factions, Counter({Factions.MACHINE_CULT: 2}))
 

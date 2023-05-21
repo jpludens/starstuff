@@ -1,26 +1,27 @@
 from collections import Counter
 from pprint import PrettyPrinter
 
+from engine.state.views import GameStateView
 from enums.enums import Factions
 from engine.state.gamestate import GameState
-from strategies.faction_strategy import FactionStrategy
 
 
 def play_game():
-    # carter_strategy = ExplorerStrategy(max_exp=25,
-    #                                    min_exp=6,
-    #                                    ratio=2)
-
     player_1 = "Alice"
     player_2 = "Bob"
 
-    strategies = {
-        player_1: FactionStrategy(Factions.STAR_EMPIRE),
-        player_2: FactionStrategy(Factions.MACHINE_CULT)}
+    # Simulations are closed until a non-spaghetti strategy can be developed.
+
+    # strategies = {
+    #     player_1: FactionStrategy(Factions.STAR_EMPIRE),
+    #     player_2: FactionStrategy(Factions.MACHINE_CULT)}
+
+    strategies = {}
 
     gamestate = GameState(player_1, player_2)
     while True:
-        moves = strategies[gamestate.active_player.name].get_moves(gamestate)
+        view = GameStateView(gamestate)
+        moves = strategies[gamestate.active_player.name].get_moves(view)
         for move in moves:
             move.execute(gamestate)
 
