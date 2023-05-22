@@ -188,16 +188,21 @@ class EmbassyYachtDrawEffect(Effect):
 
 
 # Pending Effects (requiring additional input from a player)
-class PendEffect(Effect, ABC):
-    def __init__(self):
+class TargetedEffect(Effect, ABC):
+    def __init__(self, targeting):
+        self.targeting = targeting
         self.gamestate = None
 
     def apply(self, gamestate):
         self.gamestate = gamestate
         gamestate.pending_effects.append(self)
 
-    def resolve(self, *args, **kwargs):
-        self._resolve(*args, **kwargs)
+    def resolve(self, *targets, **kwargs):
+        valid_targets = self.targeting.get_targets()
+        for target in targets:
+            if target not in valid_targets:
+                raise RuntimeError("Invalid target for {}: {}".format(self.__class__.__name__, target))
+        self._resolve(*targets, **kwargs)
         self.gamestate.pending_effects.remove(self)
         self.gamestate = None
 
@@ -205,7 +210,8 @@ class PendEffect(Effect, ABC):
         raise NotImplementedError
 
 
-class PendDestroyBase(PendEffect):
+class PendDestroyBase(TargetedEffect):
+    # Target: Base, in play, owned by opponent (must be outpost if opponent has outposts)
     def apply(self, gamestate):
         if any(gamestate.inactive_player[Zones.IN_PLAY]):
             logging.warning("{} can DESTROY a Base".format(gamestate.active_player.name))
@@ -215,7 +221,9 @@ class PendDestroyBase(PendEffect):
         DestroyBaseEffect(base).apply(self.gamestate)
 
 
-class PendChoice(PendEffect):
+class PendChoice(TargetedEffect):
+    # Target: One of two effects
+    # authority/trade/damage, discard up to 2 then draw, draw per blob
     def __init__(self, choices):
         super().__init__()
         self.choices = {type(c): c for c in choices}
@@ -229,7 +237,8 @@ class PendChoice(PendEffect):
         self.choices[choice].apply(self.gamestate)
 
 
-class PendBlobScrap(PendEffect):
+class PendBlobScrap(TargetedEffect):
+    # Target: card in trade row
     def __init__(self):
         super().__init__()
 
@@ -245,7 +254,8 @@ class PendBlobScrap(PendEffect):
         effect.apply(self.gamestate)
 
 
-class PendCultScrap(PendEffect):
+class PendCultScrap(TargetedEffect):
+    # target: #s of cards card in valid zones
     def __init__(self, *zones, up_to=1, mandatory=False):
         super().__init__()
         self.zones = list(zones)
@@ -267,6 +277,7 @@ class PendCultScrap(PendEffect):
 
 
 class PendBrainWorld(PendCultScrap):
+    # Target: inherited
     def __init__(self):
         super().__init__(Zones.HAND, Zones.DISCARD, up_to=2, mandatory=False)
 
@@ -275,7 +286,8 @@ class PendBrainWorld(PendCultScrap):
         DrawEffect(len(scraps)).apply(self.gamestate)
 
 
-class PendDiscard(PendEffect):
+class PendDiscard(TargetedEffect):
+    # Target: card in hand
     def __init__(self, up_to=1, mandatory=False):
         super().__init__()
         self.up_to = up_to
@@ -293,6 +305,7 @@ class PendDiscard(PendEffect):
 
 
 class PendRecycle(PendDiscard):
+    # Target: #s of cards in hand
     def __init__(self):
         super().__init__(up_to=2, mandatory=False)
 
@@ -301,7 +314,8 @@ class PendRecycle(PendDiscard):
         DrawEffect(len(discards)).apply(self.gamestate)
 
 
-class PendCopyShip(PendEffect):
+class PendCopyShip(TargetedEffect):
+    # Target: Ship, in play, owned by self
     def apply(self, gamestate):
         if len([c for c in gamestate[Zones.IN_PLAY] if c.card_type == CardTypes.SHIP]) > 1:
             super().apply(gamestate)
@@ -311,7 +325,8 @@ class PendCopyShip(PendEffect):
         CopyShipEffect(ship).apply(self.gamestate)
 
 
-class PendAcquireShipToTopForFree(PendEffect):
+class PendAcquireShipToTopForFree(TargetedEffect):
+    # Target: ship in trade row
     def apply(self, gamestate):
         super().apply(gamestate)
         logging.warning("{} can ACQUIRE A FREE SHIP TO TOP OF DECK".format(gamestate.active_player.name))
